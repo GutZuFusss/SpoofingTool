@@ -1,4 +1,4 @@
-/* Paszczak wrote this */
+/* Paszczak wrote this v2.0 */
 
 // spoofer.cpp : Defines the entry point for the console application.
 //
