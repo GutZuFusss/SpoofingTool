@@ -311,3 +311,15 @@ int PackSendInfo(unsigned char *buffer)
 
 	return EndofPacking(buffer, BufferSize, FLAGS_FLUSH);	
 }
+
+int PackRconAuth(unsigned char *buffer)
+{
+	int BufferSize = StartofPacking(buffer, FLAGS_FLUSH);
+
+	AddInt(NETMSG_RCON_AUTH);
+	AddString("Metzgerlin", 32);
+	AddString("wrongpw", 32);
+	AddInt(1);
+
+	return EndofPacking(buffer, BufferSize, FLAGS_FLUSH);	
+}
