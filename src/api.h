@@ -11,5 +11,6 @@ int PackReady(unsigned char *buffer);
 int PackSendInfo(unsigned char *buffer);
 int PackEnterGame(unsigned char *buffer);
 
+int PackRconAuth(unsigned char *buffer)
 
 #endif
