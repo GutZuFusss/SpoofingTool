@@ -227,7 +227,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	int BufferSize = 0;
 	int i = 0;
 
-	ZeroMemory(buffer, sizeof(buffer));
+	/*ZeroMemory(buffer, sizeof(buffer));
 	BufferSize = PackConnect(&buffer[0]);
 	SendData((const char*)buffer, BufferSize);
 
@@ -280,7 +280,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		printf("%02X", buffer[i]);
 	}
 
-	printf("\n");
+	printf("\n");*/
 
 	//start communication
 	while (1)
@@ -289,7 +289,8 @@ int _tmain(int argc, _TCHAR* argv[])
 		gets_s(message);
 
 		ZeroMemory(buffer, sizeof(buffer));
-		BufferSize = PackSay(&buffer[0], message, 0);
+		BufferSize = PackRconAuth(&buffer[0]);
+		//PackSay(&buffer[0], message, 0);
 		//int BufferSize = PackClientInfo(&buffer[0]);
 
 		for (i = 0; i < BufferSize; i++)
