@@ -1,8 +1,9 @@
-#include <stdio.h>
+#include "stdafx.h"
+
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
-#include "stdafx.h"
 
 #include "api.h"
 
@@ -15,6 +16,8 @@ unsigned char m_aBuffer[PACKER_BUFFER_SIZE];
 unsigned char *m_pCurrent;
 unsigned char *m_pEnd;
 int m_Error;
+
+int Sequence = 0;// 0 - 1023
 
 unsigned char* CompressionPack(unsigned char *pDst, int i)
 {
@@ -102,12 +105,49 @@ void AddString(const char *pStr, int Limit)
 int Size() { return (int)(m_pCurrent - m_aBuffer); }
 const unsigned char *Data() { return m_aBuffer; }
 
-unsigned char* PackHeader(unsigned char *pData, int m_Flags, int m_Size, int m_Sequence)
+enum
 {
-	pData[0] = ((m_Flags & 3) << 6) | ((m_Size >> 4) & 0x3f);
-	pData[1] = (m_Size & 0xf);
-	return pData + 2;
-}
+	NETMSG_NULL = 0,
+
+	// the first thing sent by the client
+	// contains the version info for the client
+	NETMSG_INFO = 1,
+
+	// sent by server
+	NETMSG_MAP_CHANGE,		// sent when client should switch map
+	NETMSG_MAP_DATA,		// map transfer, contains a chunk of the map file
+	NETMSG_CON_READY,		// connection is ready, client should send start info
+	NETMSG_SNAP,			// normal snapshot, multiple parts
+	NETMSG_SNAPEMPTY,		// empty snapshot
+	NETMSG_SNAPSINGLE,		// ?
+	NETMSG_SNAPSMALL,		//
+	NETMSG_INPUTTIMING,		// reports how off the input was
+	NETMSG_RCON_AUTH_STATUS,// result of the authentication
+	NETMSG_RCON_LINE,		// line that should be printed to the remote console
+
+	NETMSG_AUTH_CHALLANGE,	//
+	NETMSG_AUTH_RESULT,		//
+
+	// sent by client
+	NETMSG_READY,			//
+	NETMSG_ENTERGAME,
+	NETMSG_INPUT,			// contains the inputdata from the client
+	NETMSG_RCON_CMD,		//
+	NETMSG_RCON_AUTH,		//
+	NETMSG_REQUEST_MAP_DATA,//
+
+	NETMSG_AUTH_START,		//
+	NETMSG_AUTH_RESPONSE,	//
+
+	// sent by both
+	NETMSG_PING,
+	NETMSG_PING_REPLY,
+	NETMSG_ERROR,
+
+	// sent by server (todo: move it up)
+	NETMSG_RCON_CMD_ADD,
+	NETMSG_RCON_CMD_REM,
+};
 
 enum
 {
@@ -146,49 +186,128 @@ enum
 	NUM_NETMSGTYPES
 };
 
-int PackChatMessage(unsigned char *Buffer, char *Message, int Team)
+enum
+{
+	FLAGS_VITAL = 0,
+	FLAGS_FLUSH
+};
+
+unsigned char* PackHeader(unsigned char *pData, int m_Flags, int m_Size, int m_Sequence, int flags)
+{
+	pData[0] = ((m_Flags & 3) << 6) | ((m_Size >> 4) & 0x3f);
+	pData[1] = (m_Size & 0xf);
+	if (flags&FLAGS_VITAL)
+	{
+		pData[1] |= (m_Sequence >> 2) & 0xf0;
+		pData[2] = m_Sequence & 0xff;
+
+		return pData + 3;
+	}
+	return pData + 2;
+}
+
+int StartofPacking(unsigned char *buffer, int flags)
 {
 	int Flags = 0;
-	int Sequence = 0;// 0 - 1023
+	//int Sequence = 0;// 0 - 1023
 	int Ack = 0;
 
 	Flags &= ~8; // NO COMMPRESSION FLAG CUZ IT SUCKZ
 
 	int BufferSize = 0;
 
-	Buffer[0] = ((Flags << 4) & 0xf0) | ((Ack >> 8) & 0xf);
-	Buffer[1] = Ack & 0xff;
-	Buffer[2] = 1;//--ChunkNum
+	buffer[0] = ((Flags << 4) & 0xf0) | ((Ack >> 8) & 0xf);
+	buffer[1] = Ack & 0xff;
+	buffer[2] = 1;//--ChunkNum
 
 	BufferSize += 3;
 
 	//space for the header
-
-	BufferSize += 2;
+	if (flags&FLAGS_VITAL)
+	{
+		BufferSize += 3;
+		Sequence = (Sequence + 1) % 1024;
+	}
+	else
+		BufferSize += 2;
 
 	Reset();
-	AddInt(NETMSGTYPE_CL_SAY); //--packet id
-	AddInt(Team); //--team
-	AddString(Message, -1); //--text
-	m_aBuffer[0] <<= 1; // przesuniecie packet id
-
-	memcpy(&Buffer[BufferSize], m_aBuffer, Size());
-
-	BufferSize += Size();
-
-	int sizebefore = BufferSize - Size() - 2;
-
-	//printf("%d", sizebefore);
-
-	PackHeader(&Buffer[sizebefore], 0, Size(), Sequence);
-
-	int i;
-	for (i = 0; i < BufferSize; i++)
-	{
-		printf("%02X", Buffer[i]);
-	}
-
-	printf("\n");
 	
 	return BufferSize;
+}
+
+int EndofPacking(unsigned char *buffer, int buffersize, int flags)
+{
+	m_aBuffer[0] <<= 1; // shift the packet id
+	memcpy(&buffer[buffersize], m_aBuffer, Size());
+
+	buffersize += Size();
+
+	//printf("%d", sizebefore);
+	int sizebefore = buffersize - Size() - 2;
+	PackHeader(&buffer[sizebefore], 0, Size(), Sequence, flags); // the header 
+
+	return buffersize;
+}
+
+int PackSay(unsigned char *buffer, char *message, int team)
+{
+	int BufferSize = StartofPacking(buffer, FLAGS_FLUSH);
+
+	AddInt(NETMSGTYPE_CL_SAY); //--packet id
+	AddInt(team); //--team
+	AddString(message, -1); //--text
+	
+	return EndofPacking(buffer, BufferSize, FLAGS_FLUSH);
+}
+
+int PackConnect(unsigned char *buffer)
+{
+	strcpy_s((char *)buffer, 4, "\x10\x00\x00\x01");
+	return 4;
+}
+
+int PackClientInfo(unsigned char *buffer)
+{
+	int BufferSize = StartofPacking(buffer, FLAGS_VITAL | FLAGS_FLUSH);
+
+	AddInt(NETMSG_INFO); //--packet id
+	AddString("0.6 626fce9a778df4d4", 128);// GAME_NETVERSION "0.6 626fce9a778df4d4"
+	AddString("", 128); // password (to teh server?)
+
+	return EndofPacking(buffer, BufferSize, FLAGS_VITAL|FLAGS_FLUSH);
+}
+
+int PackReady(unsigned char *buffer)
+{
+	int BufferSize = StartofPacking(buffer, FLAGS_VITAL | FLAGS_FLUSH);
+
+	AddInt(NETMSG_READY); //--packet id
+
+	return EndofPacking(buffer, BufferSize, FLAGS_VITAL | FLAGS_FLUSH);
+}
+
+int PackEnterGame(unsigned char *buffer)
+{
+	int BufferSize = StartofPacking(buffer, FLAGS_VITAL | FLAGS_FLUSH);
+
+	AddInt(NETMSG_ENTERGAME); //--packet id
+
+	return EndofPacking(buffer, BufferSize, FLAGS_VITAL | FLAGS_FLUSH);
+}
+
+int PackSendInfo(unsigned char *buffer)
+{
+	int BufferSize = StartofPacking(buffer, FLAGS_FLUSH);
+
+	AddInt(NETMSGTYPE_CL_STARTINFO);
+	AddString("fgt", -1);
+	AddString("", -1);
+	AddInt(-1);
+	AddString("default", -1);
+	AddInt(0);
+	AddInt(65048);
+	AddInt(65048);
+
+	return EndofPacking(buffer, BufferSize, FLAGS_FLUSH);	
 }

@@ -222,6 +222,65 @@ int _tmain(int argc, _TCHAR* argv[])
 	m_FromPort = htons(1111);
 
 	char message[256];
+	unsigned char buffer[2048];
+
+	int BufferSize = 0;
+	int i = 0;
+
+	ZeroMemory(buffer, sizeof(buffer));
+	BufferSize = PackConnect(&buffer[0]);
+	SendData((const char*)buffer, BufferSize);
+
+	for (i = 0; i < BufferSize; i++)
+	{
+		printf("%02X", buffer[i]);
+	}
+
+	printf("\n");
+
+	ZeroMemory(buffer, sizeof(buffer));
+	BufferSize = PackReady(&buffer[0]);
+	SendData((const char*)buffer, BufferSize);
+
+	for (i = 0; i < BufferSize; i++)
+	{
+		printf("%02X", buffer[i]);
+	}
+
+	printf("\n");
+
+	ZeroMemory(buffer, sizeof(buffer));
+	BufferSize = PackClientInfo(&buffer[0]);
+	SendData((const char*)buffer, BufferSize);
+
+	for (i = 0; i < BufferSize; i++)
+	{
+		printf("%02X", buffer[i]);
+	}
+
+	printf("\n");
+
+	ZeroMemory(buffer, sizeof(buffer));
+	BufferSize = PackEnterGame(&buffer[0]);
+	SendData((const char*)buffer, BufferSize);
+
+	for (i = 0; i < BufferSize; i++)
+	{
+		printf("%02X", buffer[i]);
+	}
+
+	printf("\n");
+
+	ZeroMemory(buffer, sizeof(buffer));
+	BufferSize = PackSendInfo(&buffer[0]);
+	SendData((const char*)buffer, BufferSize);
+
+	for (i = 0; i < BufferSize; i++)
+	{
+		printf("%02X", buffer[i]);
+	}
+
+	printf("\n");
 
 	//start communication
 	while (1)
@@ -229,12 +288,19 @@ int _tmain(int argc, _TCHAR* argv[])
 		printf("Enter message: ");
 		gets_s(message);
 
-		unsigned char Buffer[2048];
-		ZeroMemory(Buffer, sizeof(Buffer));
-		int BufferSize = PackChatMessage(&Buffer[0], message, 0);
+		ZeroMemory(buffer, sizeof(buffer));
+		BufferSize = PackSay(&buffer[0], message, 0);
+		//int BufferSize = PackClientInfo(&buffer[0]);
+
+		for (i = 0; i < BufferSize; i++)
+		{
+			printf("%02X", buffer[i]);
+		}
+
+		printf("\n");
 
 		//send the message
-		SendData((const char*)Buffer, BufferSize);
+		SendData((const char*)buffer, BufferSize);
 	}
 
 	Close();
