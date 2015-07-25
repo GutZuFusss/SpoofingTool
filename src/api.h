@@ -2,7 +2,7 @@
 #define _API_H
 
 
-int PackChatMessage(char *Buffer, char *Message, int Team);
+int PackChatMessage(unsigned char *Buffer, char *Message, int Team);
 
 
 
