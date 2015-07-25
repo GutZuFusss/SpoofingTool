@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "stdafx.h"
+
 #include "api.h"
 
 enum
@@ -144,13 +146,13 @@ enum
 	NUM_NETMSGTYPES
 };
 
-int PackChatMessage(char *Buffer, char *Message, int Team)
+int PackChatMessage(unsigned char *Buffer, char *Message, int Team)
 {
 	int Flags = 0;
 	int Sequence = 0;// 0 - 1023
 	int Ack = 0;
 
-	Flags &= ~8; // NO COMMPRESSION CUZ IT SUCKZ
+	Flags &= ~8; // NO COMMPRESSION FLAG CUZ IT SUCKZ
 
 	int BufferSize = 0;
 
@@ -176,12 +178,12 @@ int PackChatMessage(char *Buffer, char *Message, int Team)
 
 	int sizebefore = BufferSize - Size() - 2;
 
-	printf("%d", sizebefore);
+	//printf("%d", sizebefore);
 
 	PackHeader(&Buffer[sizebefore], 0, Size(), Sequence);
 
 	int i;
-	for (i = 0; i<BufferSize; i++)
+	for (i = 0; i < BufferSize; i++)
 	{
 		printf("%02X", Buffer[i]);
 	}
