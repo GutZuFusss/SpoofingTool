@@ -204,15 +204,16 @@ void ConnectDummies(int Amount)
 		if (!Create(&m_Sock[i]))
 			Close(i);
 	}
-
-    m_FromIP[0] = inet_addr("133.37.133.37");
+	m_FromIP[0] = inet_addr("1.1.1.1");
+	m_FromIP[1] = inet_addr("192.168.100.10");
+    /*m_FromIP[0] = inet_addr("133.37.133.37");
 	m_FromIP[1]	= inet_addr("111.111.111.111");
 	m_FromIP[2]	= inet_addr("222.222.222.222");
 	m_FromIP[3]	= inet_addr("122.122.122.122");
 	m_FromIP[4]	= inet_addr("133.133.133.133");
 	m_FromIP[5]	= inet_addr("144.144.144.144");
 	m_FromIP[6]	= inet_addr("155.155.155.155");
-	m_FromIP[7]	= inet_addr("166.166.166.166");
+	m_FromIP[7]	= inet_addr("166.166.166.166");*/
 
 	m_FromPort = htons(1111);
 
@@ -269,6 +270,8 @@ void Tick()
 	{
 		time = 0;
 
+		printf("KEEPIN ALIVE ...\n");
+
 		unsigned char buffer[2048];
 
 		int BufferSize = 0;
@@ -286,6 +289,15 @@ void Tick()
 
 int _tmain(int argc, _TCHAR* argv[])
 {
+
+	ConnectDummies(2);
+
+	while (1)
+	{
+		Tick();
+		Sleep(1);
+	}
+
 	/*int srcPort = 0, dstPort = 0;
 	char srcIP[256];
 	char dstIP[256];
@@ -411,14 +423,6 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 
 	Close(0);*/
-
-	ConnectDummies(5);
-
-	while (1)
-	{
-		Tick();
-		Sleep(1);
-	}
 
 	return 0;
 }
