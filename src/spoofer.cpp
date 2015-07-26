@@ -291,7 +291,7 @@ void Tick()
 int _tmain(int argc, _TCHAR* argv[])
 {
 
-	ConnectDummies(1);
+	ConnectDummies(7);
 
 	while (1)
 	{
