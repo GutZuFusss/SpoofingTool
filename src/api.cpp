@@ -9,7 +9,7 @@
 
 enum
 {
-	PACKER_BUFFER_SIZE = 1024 * 2
+	PACKER_BUFFER_SIZE = 1024 * 4
 };
 unsigned char m_aBuffer[PACKER_BUFFER_SIZE];
 
@@ -188,11 +188,11 @@ enum
 
 enum
 {
-	FLAGS_VITAL = 0,
-	FLAGS_FLUSH
+	FLAGS_VITAL = 1,
+	FLAGS_FLUSH = 4
 };
 
-unsigned char* PackHeader(unsigned char *pData, int m_Flags, int m_Size, int m_Sequence, int flags)
+unsigned char* PackHeader(unsigned char *pData, int m_Flags, int m_Size, int m_Sequence, int flags = FLAGS_FLUSH)
 {
 	pData[0] = ((m_Flags & 3) << 6) | ((m_Size >> 4) & 0x3f);
 	pData[1] = (m_Size & 0xf);
@@ -206,7 +206,7 @@ unsigned char* PackHeader(unsigned char *pData, int m_Flags, int m_Size, int m_S
 	return pData + 2;
 }
 
-int StartofPacking(unsigned char *buffer, int flags)
+int StartofPacking(unsigned char *buffer, int flags = FLAGS_FLUSH)
 {
 	int Flags = 0;
 	//int Sequence = 0;// 0 - 1023
@@ -236,16 +236,24 @@ int StartofPacking(unsigned char *buffer, int flags)
 	return BufferSize;
 }
 
-int EndofPacking(unsigned char *buffer, int buffersize, int flags)
+int EndofPacking(unsigned char *buffer, int buffersize, int flags, bool system = false)
 {
 	m_aBuffer[0] <<= 1; // shift the packet id
+	if(system)
+		m_aBuffer[0] |= 1;
+
 	memcpy(&buffer[buffersize], m_aBuffer, Size());
 
 	buffersize += Size();
 
 	//printf("%d", sizebefore);
-	int sizebefore = buffersize - Size() - 2;
-	PackHeader(&buffer[sizebefore], 0, Size(), Sequence, flags); // the header 
+	int sizebefore = 0;
+	if (flags&FLAGS_VITAL)
+		sizebefore = buffersize - Size() - 3;
+	else
+		sizebefore = buffersize - Size() - 2;
+
+	PackHeader(&buffer[sizebefore], flags, Size(), Sequence, flags); // the header
 
 	return buffersize;
 }
@@ -263,7 +271,7 @@ int PackSay(unsigned char *buffer, char *message, int team)
 
 int PackConnect(unsigned char *buffer)
 {
-	strcpy_s((char *)buffer, 4, "\x10\x00\x00\x01");
+	memcpy((char *)buffer, "\x10\x00\x00\x01", 4);
 	return 4;
 }
 
@@ -275,7 +283,11 @@ int PackClientInfo(unsigned char *buffer)
 	AddString("0.6 626fce9a778df4d4", 128);// GAME_NETVERSION "0.6 626fce9a778df4d4"
 	AddString("", 128); // password (to teh server?)
 
-	return EndofPacking(buffer, BufferSize, FLAGS_VITAL|FLAGS_FLUSH);
+	return EndofPacking(buffer, BufferSize, FLAGS_VITAL | FLAGS_FLUSH, true);
+
+	//Sequence++;
+	//memcpy((char *)buffer, "\x00\x00\x01\x42\x02\x01\x03\x30\x2e\x36\x20\x36\x32\x36\x66\x63\x65\x39\x61\x37\x37\x38\x64\x66\x34\x64\x34\x00\x62\x61\x6e\x61\x6e\x65\x6e\x62\x61\x75\x6d\x00", 40);
+	//return 40;
 }
 
 int PackReady(unsigned char *buffer)
@@ -284,7 +296,11 @@ int PackReady(unsigned char *buffer)
 
 	AddInt(NETMSG_READY); //--packet id
 
-	return EndofPacking(buffer, BufferSize, FLAGS_VITAL | FLAGS_FLUSH);
+	return EndofPacking(buffer, BufferSize, FLAGS_VITAL | FLAGS_FLUSH, true);
+	
+	
+	//memcpy((char *)buffer, "\x00\x01\x01\x40\x01\x02\x1d", 7);
+	//return 7;
 }
 
 int PackEnterGame(unsigned char *buffer)
@@ -293,33 +309,29 @@ int PackEnterGame(unsigned char *buffer)
 
 	AddInt(NETMSG_ENTERGAME); //--packet id
 
-	return EndofPacking(buffer, BufferSize, FLAGS_VITAL | FLAGS_FLUSH);
+	return EndofPacking(buffer, BufferSize, FLAGS_VITAL | FLAGS_FLUSH, true);
+
+	//memcpy((char *)buffer, "\x00\x06\x01\x40\x01\x04\x1f", 7);
+	//return 7;
 }
 
 int PackSendInfo(unsigned char *buffer)
 {
-	int BufferSize = StartofPacking(buffer, FLAGS_FLUSH);
+	int BufferSize = StartofPacking(buffer, FLAGS_VITAL | FLAGS_FLUSH);
 
 	AddInt(NETMSGTYPE_CL_STARTINFO);
-	AddString("fgt", -1);
-	AddString("", -1);
-	AddInt(-1);
-	AddString("default", -1);
-	AddInt(0);
-	AddInt(65048);
-	AddInt(65048);
+	AddString("fgt", -1);//nick
+	AddString("", -1);//clan
+	AddInt(-1);//country
+	AddString("default", -1);//skin
+	AddInt(0);//use default colors
+	AddInt(65048);//body
+	AddInt(65048);//feet
 
-	return EndofPacking(buffer, BufferSize, FLAGS_FLUSH);	
-}
+	return EndofPacking(buffer, BufferSize, FLAGS_VITAL | FLAGS_FLUSH);
 
-int PackRconAuth(unsigned char *buffer)
-{
-	int BufferSize = StartofPacking(buffer, FLAGS_FLUSH);
+	//memcpy((char *)buffer, "\x00\x03\x01\x43\x0e\x03\x28\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x00\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x00\x40\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x00\x01\x80\xfc\xc7\x05\x80\xfc\x07", 68);
+	//return 68;
 
-	AddInt(NETMSG_RCON_AUTH);
-	AddString("Metzgerlin", 32);
-	AddString("wrongpw", 32);
-	AddInt(1);
-
-	return EndofPacking(buffer, BufferSize, FLAGS_FLUSH);	
+	
 }
