@@ -142,6 +142,9 @@ bool Create(SOCKET *pSock)
 		return false;
 	}
 
+	sprintf_s(aBuf, sizeof(aBuf), "socket created correctly\n");
+	Output(aBuf);
+
 	return true;
 }
 
@@ -179,8 +182,22 @@ USHORT checksum(USHORT *buffer, int size)
 	return (USHORT)(~cksum);
 }
 
+//debug for packet's data
+void Debug(unsigned char *buffer, int buffersize)
+{
+	int i;
+	for (i = 0; i < buffersize; i++)
+	{
+		printf("%02X", buffer[i]);
+	}
+
+	printf("\n");
+}
+
 void ConnectDummies(int Amount)
 {
+	AmountofDummies = Amount; // for tick (keep alive)
+
 	int i;
 	for(i = 0; i < Amount; i++)
 	{
@@ -200,73 +217,71 @@ void ConnectDummies(int Amount)
 	m_FromPort = htons(1111);
 
 	m_ToIP = inet_addr("92.222.64.188");
-	m_ToPort = m_ToPort = htons(8707);
+	m_ToPort = htons(8707);
 
-	char message[256];
+	//char message[256];  -- it was for chat ^^
 	unsigned char buffer[2048];
 
 	int BufferSize = 0;
-	int i = 0;
+	int j = 0;
 
 
-	for(i = 0; i < Amount; i++)
+	for(j = 0; j < Amount; j++)
 	{
 		ZeroMemory(buffer, sizeof(buffer));
 		BufferSize = PackConnect(&buffer[0]);
-		SendData((const char*)buffer, BufferSize, i);
+		SendData((const char*)buffer, BufferSize, j);
 
-		for (i = 0; i < BufferSize; i++)
-		{
-			printf("%02X", buffer[i]);
-		}
-
-		printf("\n");
+		Debug(&buffer[0], BufferSize);
 
 		ZeroMemory(buffer, sizeof(buffer));
 		BufferSize = PackClientInfo(&buffer[0]);
-		SendData((const char*)buffer, BufferSize, i);
+		SendData((const char*)buffer, BufferSize, j);
 
-		for (i = 0; i < BufferSize; i++)
-		{
-			printf("%02X", buffer[i]);
-		}
-
-		printf("\n");
+		Debug(&buffer[0], BufferSize);
 
 		ZeroMemory(buffer, sizeof(buffer));
 		BufferSize = PackReady(&buffer[0]);
-		SendData((const char*)buffer, BufferSize, i);
+		SendData((const char*)buffer, BufferSize, j);
 
-		for (i = 0; i < BufferSize; i++)
-		{
-			printf("%02X", buffer[i]);
-		}
-
-		printf("\n");
+		Debug(&buffer[0], BufferSize);
 
 		ZeroMemory(buffer, sizeof(buffer));
 		BufferSize = PackSendInfo(&buffer[0]);
-		SendData((const char*)buffer, BufferSize, i);
+		SendData((const char*)buffer, BufferSize, j);
 
-		for (i = 0; i < BufferSize; i++)
-		{
-			printf("%02X", buffer[i]);
-		}
-
-		printf("\n");
+		Debug(&buffer[0], BufferSize);
 
 		ZeroMemory(buffer, sizeof(buffer));
 		BufferSize = PackEnterGame(&buffer[0]);
-		SendData((const char*)buffer, BufferSize, i);
+		SendData((const char*)buffer, BufferSize, j);
 
-		for (i = 0; i < BufferSize; i++)
-		{
-			printf("%02X", buffer[i]);
-		}
+		Debug(&buffer[0], BufferSize);
 
-		printf("\n");
+		Sleep(250);
 	}
 	//Close(0);
+}
+
+void Tick()
+{
+	if (time > 500) //once in 500 ms
+	{
+		time = 0;
+
+		unsigned char buffer[2048];
+
+		int BufferSize = 0;
+
+		for (int i = 0; i < AmountofDummies; i++)
+		{
+			ZeroMemory(buffer, 2048);
+			BufferSize = PackKeepAlive(&buffer[0]);
+			SendData((const char*)buffer, BufferSize, i);
+		}
+	}
+	else
+		time++;
 }
 
 int _tmain(int argc, _TCHAR* argv[])
@@ -398,6 +413,13 @@ int _tmain(int argc, _TCHAR* argv[])
 	Close(0);*/
 
 	ConnectDummies(5);
+
+	while (1)
+	{
+		Tick();
+		Sleep(1);
+	}
+
 	return 0;
 }
 
