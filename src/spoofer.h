@@ -30,6 +30,10 @@ typedef struct
 	unsigned short Checksum;
 } UDP_HDR;
 
+int AmountofDummies;
+
+int time; //used in tick as a timer
+
 char m_aMessage[MAX_MESSAGE];
 SOCKET m_Sock[64];
 IN_ADDR m_Addr;

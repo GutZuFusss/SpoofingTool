@@ -275,6 +275,12 @@ int PackConnect(unsigned char *buffer)
 	return 4;
 }
 
+int PackKeepAlive(unsigned char *buffer)
+{
+	memcpy((char *)buffer, "\x00\x41\x01\x40\x05\x07\x1e\x00alive\x00", 14);
+	return 14;
+}
+
 int PackClientInfo(unsigned char *buffer)
 {
 	int BufferSize = StartofPacking(buffer, FLAGS_VITAL | FLAGS_FLUSH);
