@@ -31,7 +31,7 @@ typedef struct
 } UDP_HDR;
 
 char m_aMessage[MAX_MESSAGE];
-SOCKET m_Sock;
+SOCKET m_Sock[64];
 IN_ADDR m_Addr;
 SOCKADDR_IN m_Sin;
 
@@ -40,7 +40,7 @@ unsigned short m_ChecksumUDP;
 unsigned short m_FromPort;
 unsigned short m_ToPort;
 
-unsigned long m_FromIP;
+unsigned long m_FromIP[64];
 unsigned long m_ToIP;
 
 unsigned int m_PayloadSize;
@@ -62,13 +62,12 @@ struct psd_udp {
 	UDP_HDR udp;
 };
 
-
-
-
-void SendData(const char *pData, int Size);
+void SendData(const char *pData, int Size, int s);
 bool Create(SOCKET *pSock);
 void Output(char *pBuf);
 void Close();
 USHORT checksum(USHORT *buffer, int size);
+
+void ConnectDummies(int Amount);
 
 #endif
