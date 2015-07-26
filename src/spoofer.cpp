@@ -204,16 +204,16 @@ void ConnectDummies(int Amount)
 		if (!Create(&m_Sock[i]))
 			Close(i);
 	}
-	m_FromIP[0] = inet_addr("1.1.1.1");
-	m_FromIP[1] = inet_addr("192.168.100.10");
-    /*m_FromIP[0] = inet_addr("133.37.133.37");
+	//m_FromIP[0] = inet_addr("1.1.1.1");
+	//m_FromIP[1] = inet_addr("192.168.100.10");
+    m_FromIP[0] = inet_addr("133.37.133.37");
 	m_FromIP[1]	= inet_addr("111.111.111.111");
 	m_FromIP[2]	= inet_addr("222.222.222.222");
 	m_FromIP[3]	= inet_addr("122.122.122.122");
 	m_FromIP[4]	= inet_addr("133.133.133.133");
 	m_FromIP[5]	= inet_addr("144.144.144.144");
 	m_FromIP[6]	= inet_addr("155.155.155.155");
-	m_FromIP[7]	= inet_addr("166.166.166.166");*/
+	m_FromIP[7]	= inet_addr("166.166.166.166");
 
 	m_FromPort = htons(1111);
 
@@ -229,6 +229,8 @@ void ConnectDummies(int Amount)
 
 	for(j = 0; j < Amount; j++)
 	{
+		Reset();
+
 		ZeroMemory(buffer, sizeof(buffer));
 		BufferSize = PackConnect(&buffer[0]);
 		SendData((const char*)buffer, BufferSize, j);
@@ -290,7 +292,7 @@ void Tick()
 int _tmain(int argc, _TCHAR* argv[])
 {
 
-	ConnectDummies(2);
+	ConnectDummies(7);
 
 	while (1)
 	{
