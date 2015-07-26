@@ -288,142 +288,79 @@ void Tick()
 		time++;
 }
 
+DWORD WINAPI WorkingThread(LPVOID lpParam) 
+{
+	printf("Created new thread\n");
+
+	SOCKET g_Client = (SOCKET)lpParam; 
+	char buffer[256];
+
+	send(g_Client, "Welcome", strlen("Welcome"), 0);
+
+	while(1)
+	{
+		memset(&buffer, 0, sizeof(buffer));
+		
+		if(recv(g_Client, buffer, sizeof(buffer), 0) != SOCKET_ERROR)
+		{
+			printf("Received: %s\n",buffer);
+			send(g_Client, "Command received", strlen("Command received"), 0);
+		}
+	}
+}
+
 int _tmain(int argc, _TCHAR* argv[])
 {
+	DWORD Thread; 
+	WSADATA data;
+	SOCKET g_Server, g_Client;
+	SOCKADDR_IN info, client_info;
+	int client_info_length = sizeof(client_info);
 
-	ConnectDummies(7);
+	printf("Starting...\n");
 
-	while (1)
+	// WSA
+	if(WSAStartup(MAKEWORD(2, 0), &data) != 0)
+		printf("Error in WSAStartup(): %s\n", WSAGetLastError());
+
+	// Socket
+	g_Server = socket(AF_INET, SOCK_STREAM, 0);
+	if(g_Server == INVALID_SOCKET)
+		printf("Error in socket(): %s\n", WSAGetLastError());
+
+	// Info
+	info.sin_addr.s_addr	=	INADDR_ANY;
+	info.sin_family			=	AF_INET;
+	info.sin_port			=	htons(2015);
+	
+	// Bind
+	if(bind(g_Server, (struct sockaddr*)&info, sizeof(info)) == SOCKET_ERROR)
+		printf("Error in bind(): %s\n", WSAGetLastError());
+
+	// Listen
+	if(listen(g_Server, 5) == SOCKET_ERROR)
+		printf("Error in listen(): %s\n", WSAGetLastError());
+
+	printf("Waiting for clients...\n");
+
+	while(1)
 	{
 		Tick();
 		Sleep(1);
-	}
 
-	/*int srcPort = 0, dstPort = 0;
-	char srcIP[256];
-	char dstIP[256];
+		g_Client = accept(g_Server, (struct sockaddr*)&client_info, &client_info_length);
 
-	printf("source ip:\n");
-
-	gets_s(srcIP);
-
-	printf("source port:\n");
-
-	scanf_s("%d", &srcPort);
-
-	printf("destination ip:\n");
-
-	gets_s(dstIP);
-
-	printf("destination port:\n");
-
-	scanf_s("%d", &dstPort);*/
-
-	// THIS IS NOT NEEDED HERE! -Meskalin
-	/*if (!Create(&m_Sock))
-		Close();*/
-
-	/*char aHostname[1024];
-	gethostname(aHostname, 1024);
-	struct hostent *pHostent;
-	pHostent = gethostbyname(aHostname);
-
-	m_ToIP = inet_addr("92.222.22.82");
-	m_ToPort = htons(8303);
-
-	m_FromIP = /*inet_addr("1.30.158.56");inet_addr(inet_ntoa(*(struct in_addr *)*pHostent->h_addr_list));
-	m_FromPort = htons(1337);*/
-
-	/*m_ToIP = inet_addr("92.222.64.188");
-	m_ToPort = htons(8707);
-
-	m_FromIP = inet_addr("192.168.100.10");
-	m_FromPort = htons(1111);
-
-	char message[256];
-	unsigned char buffer[2048];
-
-	int BufferSize = 0;
-	int i = 0;
-
-	ZeroMemory(buffer, sizeof(buffer));
-	BufferSize = PackConnect(&buffer[0]);
-	SendData((const char*)buffer, BufferSize, i);
-
-	for (i = 0; i < BufferSize; i++)
-	{
-		printf("%02X", buffer[i]);
-	}
-
-	printf("\n");
-
-	ZeroMemory(buffer, sizeof(buffer));
-	BufferSize = PackClientInfo(&buffer[0]);
-	SendData((const char*)buffer, BufferSize, i);
-
-	for (i = 0; i < BufferSize; i++)
-	{
-		printf("%02X", buffer[i]);
-	}
-
-	printf("\n");
-
-	ZeroMemory(buffer, sizeof(buffer));
-	BufferSize = PackReady(&buffer[0]);
-	SendData((const char*)buffer, BufferSize, i);
-
-	for (i = 0; i < BufferSize; i++)
-	{
-		printf("%02X", buffer[i]);
-	}
-
-	printf("\n");
-
-	ZeroMemory(buffer, sizeof(buffer));
-	BufferSize = PackSendInfo(&buffer[0]);
-	SendData((const char*)buffer, BufferSize, i);
-
-	for (i = 0; i < BufferSize; i++)
-	{
-		printf("%02X", buffer[i]);
-	}
-
-	printf("\n");
-
-	ZeroMemory(buffer, sizeof(buffer));
-	BufferSize = PackEnterGame(&buffer[0]);
-	SendData((const char*)buffer, BufferSize, i);
-
-	for (i = 0; i < BufferSize; i++)
-	{
-		printf("%02X", buffer[i]);
-	}
-
-	printf("\n");
-
-	//start communication
-	while (1)
-	{
-		printf("Enter message: ");
-		gets_s(message);
-
-		ZeroMemory(buffer, sizeof(buffer));
-		//BufferSize = PackReady(&buffer[0]);
-		BufferSize = PackSay(&buffer[0], message, 0);
-		//int BufferSize = PackClientInfo(&buffer[0]);
-
-		for (i = 0; i < BufferSize; i++)
+		if(g_Client != SOCKET_ERROR)
 		{
-			printf("%02X", buffer[i]);
+			printf("Client accepted: %s:%i\n", inet_ntoa(client_info.sin_addr), ntohs(client_info.sin_port));
+			CreateThread(NULL, 0, WorkingThread, (LPVOID)g_Client, 0, &Thread);
 		}
-
-		printf("\n");
-
-		//send the message
-		SendData((const char*)buffer, BufferSize, i);
+		else
+			printf("Error in accept(): %s\n", WSAGetLastError());
 	}
 
-	Close(0);*/
+	closesocket(g_Server);
+	WSACleanup();
 
 	return 0;
 }
