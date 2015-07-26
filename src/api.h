@@ -12,5 +12,7 @@ int PackEnterGame(unsigned char *buffer);
 
 int PackKeepAlive(unsigned char *buffer);
 
+void Reset();
+
 
 #endif

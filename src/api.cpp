@@ -44,7 +44,7 @@ unsigned char* CompressionPack(unsigned char *pDst, int i)
 	return pDst;
 }
 
-void Reset()
+void ResetPacker()
 {
 	m_Error = 0;
 	m_pCurrent = m_aBuffer;
@@ -231,7 +231,7 @@ int StartofPacking(unsigned char *buffer, int flags = FLAGS_FLUSH)
 	else
 		BufferSize += 2;
 
-	Reset();
+	ResetPacker();
 	
 	return BufferSize;
 }
@@ -340,4 +340,10 @@ int PackSendInfo(unsigned char *buffer)
 	//return 68;
 
 	
+}
+
+void Reset()
+{
+	Sequence = 0;
+	ResetPacker();
 }
