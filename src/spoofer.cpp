@@ -182,6 +182,7 @@ USHORT checksum(USHORT *buffer, int size)
 	return (USHORT)(~cksum);
 }
 
+
 //debug for packet's data
 void Debug(unsigned char *buffer, int buffersize)
 {
@@ -204,8 +205,8 @@ void ConnectDummies(int Amount)
 		if (!Create(&m_Sock[i]))
 			Close(i);
 	}
-	//m_FromIP[0] = inet_addr("1.1.1.1");
-	//m_FromIP[1] = inet_addr("192.168.100.10");
+
+	//m_FromIP[0] = inet_addr("192.168.100.10");
     m_FromIP[0] = inet_addr("133.37.133.37");
 	m_FromIP[1]	= inet_addr("111.111.111.111");
 	m_FromIP[2]	= inet_addr("222.222.222.222");
@@ -260,8 +261,6 @@ void ConnectDummies(int Amount)
 		SendData((const char*)buffer, BufferSize, j);
 
 		Debug(&buffer[0], BufferSize);
-
-		Sleep(250);
 	}
 	//Close(0);
 }
@@ -292,7 +291,7 @@ void Tick()
 int _tmain(int argc, _TCHAR* argv[])
 {
 
-	ConnectDummies(7);
+	ConnectDummies(1);
 
 	while (1)
 	{
