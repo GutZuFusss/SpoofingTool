@@ -72,6 +72,11 @@ void Output(char *pBuf);
 void Close();
 USHORT checksum(USHORT *buffer, int size);
 
-void ConnectDummies(int Amount);
+bool m_WantRemoveDummies;
+
+void ConnectDummies(int Amount, int Vote);
+void DisconnectDummies();
+
+void VoteBot(const char *IP, int Port, Amount, int v);
 
 #endif
