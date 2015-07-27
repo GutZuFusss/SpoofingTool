@@ -280,16 +280,16 @@ void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 
 		// one alive packet right after joining...
 		ZeroMemory(buffer, 2048);
-		BufferSize = PackKeepAlive(&buffer[0], i);
-		SendData((const char*)buffer, BufferSize, i);
+		BufferSize = PackKeepAlive(&buffer[0], j);
+		SendData((const char*)buffer, BufferSize, j);
 
 		//Debug(&buffer[0], BufferSize);
 
 		if(Vote == 1 || Vote == -1)
 		{
 			ZeroMemory(buffer, 2048);
-			BufferSize = PackVote(&buffer[0], i, Vote);
-			SendData((const char*)buffer, BufferSize, i);
+			BufferSize = PackVote(&buffer[0], j, Vote);
+			SendData((const char*)buffer, BufferSize, j);
 
 			//Debug(&buffer[0], BufferSize);
 		}
@@ -315,7 +315,6 @@ void DisconnectDummies()
 void VoteBot(const char *IP, int Port, int Amount, int v)
 {
 	ConnectDummies(IP, Port, Amount, v);
-	m_WantRemoveDummies = true;
 }
 
 void Tick()
