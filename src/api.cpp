@@ -405,13 +405,15 @@ int PackVote(unsigned char *buffer, int id, int v)
 
 int PackRconAuth(unsigned char *buffer, int id)
 {
-	int BufferSize = StartofPacking(buffer, id, FLAGS_VITAL);
+	/*int BufferSize = StartofPacking(buffer, id, FLAGS_FLUSH);
 
 	AddInt(NETMSG_RCON_AUTH);
 	AddString("", 32);
 	AddString("wrongpw", 32);
 	AddInt(1);
-	return EndofPacking(buffer, BufferSize, id, FLAGS_VITAL);
+	return EndofPacking(buffer, BufferSize, id, FLAGS_FLUSH);*/
+	memcpy((char *)buffer, "\x00\x25\x02\x42\x04\x09\x25\x00\x74\x65\x73\x74\x74\x65\x73\x74\x74\x65\x73\x74\x74\x65\x73\x74\x74\x65\x73\x74\x65\x74\x74\x65\x74\x73\x74\x65\x73\x74\x65\x73\x00\x01\x01\x05\x21\xb2\xef\xe6\x08\xb7\xef\xe6\x08\x28\x00\x03\x8f\x06\x00\x02\x00\x01\x00\x00\x00\x67\xe7\xda\x01\x16\x8c\xd9", 68);
+	return 72;
 }
 
 void Reset(int id)
