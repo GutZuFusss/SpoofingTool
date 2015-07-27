@@ -74,9 +74,9 @@ USHORT checksum(USHORT *buffer, int size);
 
 bool m_WantRemoveDummies;
 
-void ConnectDummies(int Amount, int Vote);
+void ConnectDummies(const char *IP, int Port, int Amount, int Vote);
 void DisconnectDummies();
 
-void VoteBot(const char *IP, int Port, Amount, int v);
+void VoteBot(const char *IP, int Port, int Amount, int v);
 
 #endif
