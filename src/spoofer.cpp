@@ -377,11 +377,11 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				Char++;
 			}
 
-			if(strcmp(aCmd[0], "status") == 0) // test
+			if(strcmp(aCmd[0], "status")) // test
 			{
 				send(g_Client, "Working fine", strlen("Working fine"), 0);
 			}
-			else if(strcmp(aCmd[0], "dummies") == 0)
+			else if(strcmp(aCmd[0], "dummies"))
 			{
 				if(aCmd[1][0] && aCmd[2][0] && aCmd[3][0])
 				{
@@ -394,12 +394,12 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				else
 					send(g_Client, "Please use: dummies <ip> <port> <num>", strlen("Please use: dummies <ip> <port> <num>"), 0);
 			}
-			else if(strcmp(aCmd[0], "dcdummies") == 0)
+			else if(strcmp(aCmd[0], "dcdummies"))
 			{
 				DisconnectDummies();
 				send(g_Client, "Dummies disconnected", strlen("Dummies disconnected"), 0);
 			}
-			else if(strstr(aCmd[0], "votebot"))
+			else if(strcmp(aCmd[0], "votebot"))
 			{
 				if(aCmd[1][0] && aCmd[2][0] && aCmd[3][0] && aCmd[4][0])
 				{
