@@ -9,7 +9,6 @@
 using namespace std;
 
 #define SERVER_IP "78.31.64.155"
-//#define SERVER_IP "127.0.0.1"
 #define SERVER_PORT 2015
 
 int _tmain(int argc, _TCHAR* argv[])
@@ -37,6 +36,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	if(connect(g_Socket, (struct sockaddr*)&info, sizeof(info)) == SOCKET_ERROR)
 		cout << "Error in connect(): " << WSAGetLastError() << endl;
 
+	cout << "[Client]: Connected to server..." << endl;
+
 	while(1)
 	{
 		memset(&sBuffer, 0, sizeof(sBuffer));
@@ -50,7 +51,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			cout << "Error in recv(): " << WSAGetLastError() << endl;
 
 cmd:
-		cout << "Send cmd: ";
+		cout << ">> ";
 		cin.getline(sBuffer, sizeof(sBuffer));
 
 		if(!sBuffer[0])
@@ -58,8 +59,6 @@ cmd:
 
 		if(send(g_Socket, sBuffer, strlen(sBuffer), 0) == SOCKET_ERROR)
 			cout << "Error in send(): " << WSAGetLastError() << endl;
-		else
-			cout << sBuffer << " sent." << endl;
 	}
 
 	closesocket(g_Socket);

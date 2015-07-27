@@ -352,7 +352,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 	SOCKET g_Client = (SOCKET)lpParam; 
 	char buffer[256];
 
-	send(g_Client, "Welcome", strlen("Welcome"), 0);
+	send(g_Client, "[Server]: Connection established! Welcome!", strlen("[Server]: Connection established! Welcome!"), 0);
 
 	while(1)
 	{
@@ -380,7 +380,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 
 			if(strcmp(aCmd[0], "status") == 0) // test
 			{
-				send(g_Client, "Working fine", strlen("Working fine"), 0);
+				send(g_Client, "[Server]: Working fine", strlen("[Server]: Working fine"), 0);
 			}
 			else if(strcmp(aCmd[0], "dummies") == 0)
 			{
@@ -390,15 +390,15 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 					int Num = atoi(aCmd[3]);
 					ConnectDummies(aCmd[1], Port, Num, 0);
 
-					send(g_Client, "Dummies connected", strlen("Dummies connected"), 0);
+					send(g_Client, "[Server]: Dummies connected!", strlen("[Server]: Dummies connected!"), 0);
 				}
 				else
-					send(g_Client, "Please use: dummies <ip> <port> <num>", strlen("Please use: dummies <ip> <port> <num>"), 0);
+					send(g_Client, "[Server]: Please use: dummies <ip> <port> <num>", strlen("[Server]: Please use: dummies <ip> <port> <num>"), 0);
 			}
 			else if(strcmp(aCmd[0], "dcdummies") == 0)
 			{
 				DisconnectDummies();
-				send(g_Client, "Dummies disconnected", strlen("Dummies disconnected"), 0);
+				send(g_Client, "[Server]: Dummies disconnected.", strlen("[Server]: Dummies disconnected."), 0);
 			}
 			else if(strcmp(aCmd[0], "votebot") == 0)
 			{
@@ -409,13 +409,13 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 					int Vote = atoi(aCmd[4]);
 					VoteBot(aCmd[1], Port, Num, Vote);
 
-					send(g_Client, "Dummies connected (Voting...)", strlen("Dummies connected (Voting...)"), 0);
+					send(g_Client, "[Server]: Dummies connected! (Voting...)", strlen("[Server]: Dummies connected! (Voting...)"), 0);
 				}
 				else
-					send(g_Client, "Please use: votebot <ip> <port> <num> <vote>", strlen("Please use: votebot <ip> <port> <num> <vote>"), 0);
+					send(g_Client, "[Server]: Please use: votebot <ip> <port> <num> <vote>", strlen("[Server]: Please use: votebot <ip> <port> <num> <vote>"), 0);
 			}
 			else
-				send(g_Client, "We don't know this cmd. Try again.", strlen("We don't know this cmd. Try again."), 0);
+				send(g_Client, "[Server]: We don't know this cmd. Try again.", strlen("[Server]: We don't know this cmd. Try again."), 0);
 		}
 	}
 }
