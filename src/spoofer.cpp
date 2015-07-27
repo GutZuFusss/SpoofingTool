@@ -278,6 +278,13 @@ void ConnectDummies(const char *IP, int Port, int Amount)
 		SendData((const char*)buffer, BufferSize, j);
 
 		Debug(&buffer[0], BufferSize);
+
+		// one alive packet right after joining...
+		ZeroMemory(buffer, 2048);
+		BufferSize = PackKeepAlive(&buffer[0], i);
+		SendData((const char*)buffer, BufferSize, i);
+
+		Debug(&buffer[0], BufferSize);
 	}
 	//Close(0);
 }
@@ -288,7 +295,7 @@ void Tick()
 	{
 		time = 0;
 
-		printf("KEEPIN ALIVE ...\n");
+		//printf("KEEPIN ALIVE ...\n");
 
 		unsigned char buffer[2048];
 
