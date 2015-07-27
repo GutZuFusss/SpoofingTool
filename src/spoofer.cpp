@@ -195,6 +195,17 @@ void Debug(unsigned char *buffer, int buffersize)
 	printf("\n");
 }
 
+unsigned long genip()
+{
+	unsigned char *p_ip;
+	unsigned long ul_dst;
+
+	p_ip = (unsigned char*)&ul_dst;
+	for (int i = 0; i<sizeof(unsigned long); i++)
+		*p_ip++ = rand() % 255;
+	return ul_dst;
+}
+
 void ConnectDummies(const char *IP, int Port, int Amount)
 {
 	AmountofDummies = Amount; // for tick (keep alive)
@@ -206,15 +217,20 @@ void ConnectDummies(const char *IP, int Port, int Amount)
 			Close(i);
 	}
 
+	for (int k = 0; k < Amount; k++)
+	{
+		m_FromIP[k] = genip();
+	}
+
 	//m_FromIP[0] = inet_addr("192.168.100.10");
-    m_FromIP[0] = inet_addr("133.37.133.37");
+    /*m_FromIP[0] = inet_addr("133.37.133.37");
 	m_FromIP[1]	= inet_addr("111.111.111.111");
 	m_FromIP[2]	= inet_addr("222.222.222.222");
 	m_FromIP[3]	= inet_addr("122.122.122.122");
 	m_FromIP[4]	= inet_addr("133.133.133.133");
 	m_FromIP[5]	= inet_addr("144.144.144.144");
 	m_FromIP[6]	= inet_addr("155.155.155.155");
-	m_FromIP[7]	= inet_addr("166.166.166.166");
+	m_FromIP[7]	= inet_addr("166.166.166.166");*/
 
 	m_FromPort = htons(1111);
 
@@ -230,34 +246,34 @@ void ConnectDummies(const char *IP, int Port, int Amount)
 
 	for(j = 0; j < Amount; j++)
 	{
-		Reset();
+		Reset(j);
 
 		ZeroMemory(buffer, sizeof(buffer));
-		BufferSize = PackConnect(&buffer[0]);
+		BufferSize = PackConnect(&buffer[0], j);
+		SendData((const char*)buffer, BufferSize, 0);
+
+		Debug(&buffer[0], BufferSize);
+
+		ZeroMemory(buffer, sizeof(buffer));
+		BufferSize = PackClientInfo(&buffer[0], j);
 		SendData((const char*)buffer, BufferSize, j);
 
 		Debug(&buffer[0], BufferSize);
 
 		ZeroMemory(buffer, sizeof(buffer));
-		BufferSize = PackClientInfo(&buffer[0]);
+		BufferSize = PackReady(&buffer[0], j);
 		SendData((const char*)buffer, BufferSize, j);
 
 		Debug(&buffer[0], BufferSize);
 
 		ZeroMemory(buffer, sizeof(buffer));
-		BufferSize = PackReady(&buffer[0]);
+		BufferSize = PackSendInfo(&buffer[0], j);
 		SendData((const char*)buffer, BufferSize, j);
 
 		Debug(&buffer[0], BufferSize);
 
 		ZeroMemory(buffer, sizeof(buffer));
-		BufferSize = PackSendInfo(&buffer[0]);
-		SendData((const char*)buffer, BufferSize, j);
-
-		Debug(&buffer[0], BufferSize);
-
-		ZeroMemory(buffer, sizeof(buffer));
-		BufferSize = PackEnterGame(&buffer[0]);
+		BufferSize = PackEnterGame(&buffer[0], j);
 		SendData((const char*)buffer, BufferSize, j);
 
 		Debug(&buffer[0], BufferSize);
@@ -280,7 +296,7 @@ void Tick()
 		for (int i = 0; i < AmountofDummies; i++)
 		{
 			ZeroMemory(buffer, 2048);
-			BufferSize = PackKeepAlive(&buffer[0]);
+			BufferSize = PackKeepAlive(&buffer[0], i);
 			SendData((const char*)buffer, BufferSize, i);
 		}
 	}
@@ -399,4 +415,3 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	return 0;
 }
-

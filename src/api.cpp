@@ -17,8 +17,8 @@ unsigned char *m_pCurrent;
 unsigned char *m_pEnd;
 int m_Error;
 
-int Sequence = 0;// 0 - 1023
-int Ack = 0;
+int Sequence[64];// 0 - 1023
+int Ack[64];
 
 unsigned char* CompressionPack(unsigned char *pDst, int i)
 {
@@ -204,11 +204,11 @@ enum
 	NET_PACKETFLAG_CONTROL = 16,
 };
 
-unsigned char* PackHeader(unsigned char *pData, int m_Flags, int m_Size, int m_Sequence, int flags = FLAGS_FLUSH)
+unsigned char* PackHeader(unsigned char *pData, int m_Flags, int m_Size, int m_Sequence)
 {
 	pData[0] = ((m_Flags & 3) << 6) | ((m_Size >> 4) & 0x3f);
 	pData[1] = (m_Size & 0xf);
-	if (flags&FLAGS_VITAL)
+	if (m_Flags&FLAGS_VITAL)
 	{
 		pData[1] |= (m_Sequence >> 2) & 0xf0;
 		pData[2] = m_Sequence & 0xff;
@@ -218,7 +218,7 @@ unsigned char* PackHeader(unsigned char *pData, int m_Flags, int m_Size, int m_S
 	return pData + 2;
 }
 
-int StartofPacking(unsigned char *buffer, int flags = FLAGS_FLUSH)
+int StartofPacking(unsigned char *buffer, int id, int flags = FLAGS_FLUSH)
 {
 	int Flags = 0;
 	//int Sequence = 0;// 0 - 1023
@@ -229,11 +229,11 @@ int StartofPacking(unsigned char *buffer, int flags = FLAGS_FLUSH)
 	int BufferSize = 0;
 
 	if (flags == NET_PACKETFLAG_CONTROL)
-		buffer[0] = ((1 << 4) & 0xf0) | ((Ack >> 8) & 0xf);
+		buffer[0] = ((1 << 4) & 0xf0) | ((Ack[id] >> 8) & 0xf);
 	else
-		buffer[0] = ((Flags << 4) & 0xf0) | ((Ack >> 8) & 0xf);
+		buffer[0] = ((Flags << 4) & 0xf0) | ((Ack[id] >> 8) & 0xf);
 
-	buffer[1] = Ack & 0xff;
+	buffer[1] = Ack[id] & 0xff;
 
 	if (flags == NET_PACKETFLAG_CONTROL)
 		buffer[2] = 0;//--ChunkNum
@@ -246,15 +246,15 @@ int StartofPacking(unsigned char *buffer, int flags = FLAGS_FLUSH)
 
 	if (flags == NET_PACKETFLAG_CONTROL)
 	{
-		Sequence = 0;
-		++Ack %= 1024;
+		Sequence[id] = 0;
+		++Ack[id] %= 1024;
 		return BufferSize;
 	}
 	
 	if (flags&FLAGS_VITAL)
 	{
 		BufferSize += 3;
-		Sequence = (Sequence + 1) % 1024;
+		Sequence[id] = (Sequence[id] + 1) % 1024;
 		//++Ack %= 1024;
 	}
 	else
@@ -265,7 +265,7 @@ int StartofPacking(unsigned char *buffer, int flags = FLAGS_FLUSH)
 	return BufferSize;
 }
 
-int EndofPacking(unsigned char *buffer, int buffersize, int flags, bool system = false)
+int EndofPacking(unsigned char *buffer, int buffersize, int id, int flags, bool system = false)
 {
 	m_aBuffer[0] <<= 1; // shift the packet id
 	if(system)
@@ -282,28 +282,29 @@ int EndofPacking(unsigned char *buffer, int buffersize, int flags, bool system =
 	else
 		sizebefore = buffersize - Size() - 2;
 
-	PackHeader(&buffer[sizebefore], flags, Size(), Sequence, flags); // the header
+	PackHeader(&buffer[sizebefore], flags, Size(), Sequence[id]); // the header
 
 	return buffersize;
 }
 
 int PackSay(unsigned char *buffer, char *message, int team)
 {
-	int BufferSize = StartofPacking(buffer, FLAGS_FLUSH);
+	/*int BufferSize = StartofPacking(buffer, FLAGS_FLUSH);
 
 	AddInt(NETMSGTYPE_CL_SAY); //--packet id
 	AddInt(team); //--team
 	AddString(message, -1); //--text
 	
-	return EndofPacking(buffer, BufferSize, FLAGS_FLUSH);
+	return EndofPacking(buffer, BufferSize, FLAGS_FLUSH, );*/
+	return 0;
 }
 
-int PackConnect(unsigned char *buffer)
+int PackConnect(unsigned char *buffer, int id)
 {
 	//memcpy((char *)buffer, "\x10\x00\x00\x01", 4);
 	//return 4;
 
-	int BufferSize = StartofPacking(buffer, NET_PACKETFLAG_CONTROL);
+	int BufferSize = StartofPacking(buffer, id, NET_PACKETFLAG_CONTROL);
 
 	buffer[BufferSize] = NET_CTRLMSG_CONNECT;
 
@@ -312,9 +313,9 @@ int PackConnect(unsigned char *buffer)
 	return BufferSize;
 }
 
-int PackKeepAlive(unsigned char *buffer)
+int PackKeepAlive(unsigned char *buffer, int id)
 {
-	int BufferSize = StartofPacking(buffer, NET_PACKETFLAG_CONTROL);
+	int BufferSize = StartofPacking(buffer, id, NET_PACKETFLAG_CONTROL);
 
 	buffer[BufferSize] = NET_CTRLMSG_KEEPALIVE;
 
@@ -323,49 +324,49 @@ int PackKeepAlive(unsigned char *buffer)
 	return 	BufferSize;
 }
 
-int PackClientInfo(unsigned char *buffer)
+int PackClientInfo(unsigned char *buffer, int id)
 {
-	int BufferSize = StartofPacking(buffer, FLAGS_VITAL | FLAGS_FLUSH);
+	int BufferSize = StartofPacking(buffer, id, FLAGS_VITAL | FLAGS_FLUSH);
 
 	AddInt(NETMSG_INFO); //--packet id
 	AddString("0.6 626fce9a778df4d4", 128);// GAME_NETVERSION "0.6 626fce9a778df4d4"
 	AddString("", 128); // password (to teh server?)
 
-	return EndofPacking(buffer, BufferSize, FLAGS_VITAL | FLAGS_FLUSH, true);
+	return EndofPacking(buffer, BufferSize, id, FLAGS_VITAL | FLAGS_FLUSH, true);
 
 	//Sequence++;
 	//memcpy((char *)buffer, "\x00\x00\x01\x42\x02\x01\x03\x30\x2e\x36\x20\x36\x32\x36\x66\x63\x65\x39\x61\x37\x37\x38\x64\x66\x34\x64\x34\x00\x62\x61\x6e\x61\x6e\x65\x6e\x62\x61\x75\x6d\x00", 40);
 	//return 40;
 }
 
-int PackReady(unsigned char *buffer)
+int PackReady(unsigned char *buffer, int id)
 {
-	int BufferSize = StartofPacking(buffer, FLAGS_VITAL | FLAGS_FLUSH);
+	int BufferSize = StartofPacking(buffer, id, FLAGS_VITAL | FLAGS_FLUSH);
 
 	AddInt(NETMSG_READY); //--packet id
 
-	return EndofPacking(buffer, BufferSize, FLAGS_VITAL | FLAGS_FLUSH, true);
+	return EndofPacking(buffer, BufferSize, id, FLAGS_VITAL | FLAGS_FLUSH, true);
 	
 	
 	//memcpy((char *)buffer, "\x00\x01\x01\x40\x01\x02\x1d", 7);
 	//return 7;
 }
 
-int PackEnterGame(unsigned char *buffer)
+int PackEnterGame(unsigned char *buffer, int id)
 {
-	int BufferSize = StartofPacking(buffer, FLAGS_VITAL | FLAGS_FLUSH);
+	int BufferSize = StartofPacking(buffer, id, FLAGS_VITAL | FLAGS_FLUSH);
 
 	AddInt(NETMSG_ENTERGAME); //--packet id
 
-	return EndofPacking(buffer, BufferSize, FLAGS_VITAL | FLAGS_FLUSH, true);
+	return EndofPacking(buffer, BufferSize, id, FLAGS_VITAL | FLAGS_FLUSH, true);
 
 	//memcpy((char *)buffer, "\x00\x06\x01\x40\x01\x04\x1f", 7);
 	//return 7;
 }
 
-int PackSendInfo(unsigned char *buffer)
+int PackSendInfo(unsigned char *buffer, int id)
 {
-	int BufferSize = StartofPacking(buffer, FLAGS_VITAL | FLAGS_FLUSH);
+	int BufferSize = StartofPacking(buffer, id, FLAGS_VITAL | FLAGS_FLUSH);
 
 	AddInt(NETMSGTYPE_CL_STARTINFO);
 	AddString("faggot", -1);//nick
@@ -376,7 +377,7 @@ int PackSendInfo(unsigned char *buffer)
 	AddInt(65048);//body
 	AddInt(65048);//feet
 
-	return EndofPacking(buffer, BufferSize, FLAGS_VITAL | FLAGS_FLUSH);
+	return EndofPacking(buffer, BufferSize, id, FLAGS_VITAL | FLAGS_FLUSH);
 
 	//memcpy((char *)buffer, "\x00\x03\x01\x43\x0e\x03\x28\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x00\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x00\x40\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x00\x01\x80\xfc\xc7\x05\x80\xfc\x07", 68);
 	//return 68;
@@ -384,9 +385,9 @@ int PackSendInfo(unsigned char *buffer)
 	
 }
 
-void Reset()
+void Reset(int id)
 {
-	Ack = 0;
-	Sequence = 0;
+	Sequence[id] = 0;
+	Ack[id] = 0;
 	ResetPacker();
 }
