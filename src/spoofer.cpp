@@ -220,7 +220,6 @@ void ConnectDummies(const char *IP, int Port, int Amount)
 	for (int k = 0; k < Amount; k++)
 	{
 		m_FromIP[k] = genip();
-		printf("%li", m_FromIP[k]);
 	}
 
 	//m_FromIP[0] = inet_addr("192.168.100.10");
@@ -253,38 +252,38 @@ void ConnectDummies(const char *IP, int Port, int Amount)
 		BufferSize = PackConnect(&buffer[0], j);
 		SendData((const char*)buffer, BufferSize, j);
 
-		Debug(&buffer[0], BufferSize);
+		//Debug(&buffer[0], BufferSize);
 
 		ZeroMemory(buffer, sizeof(buffer));
 		BufferSize = PackClientInfo(&buffer[0], j);
 		SendData((const char*)buffer, BufferSize, j);
 
-		Debug(&buffer[0], BufferSize);
+		//Debug(&buffer[0], BufferSize);
 
 		ZeroMemory(buffer, sizeof(buffer));
 		BufferSize = PackReady(&buffer[0], j);
 		SendData((const char*)buffer, BufferSize, j);
 
-		Debug(&buffer[0], BufferSize);
+		//Debug(&buffer[0], BufferSize);
 
 		ZeroMemory(buffer, sizeof(buffer));
 		BufferSize = PackSendInfo(&buffer[0], j);
 		SendData((const char*)buffer, BufferSize, j);
 
-		Debug(&buffer[0], BufferSize);
+		//Debug(&buffer[0], BufferSize);
 
 		ZeroMemory(buffer, sizeof(buffer));
 		BufferSize = PackEnterGame(&buffer[0], j);
 		SendData((const char*)buffer, BufferSize, j);
 
-		Debug(&buffer[0], BufferSize);
+		//Debug(&buffer[0], BufferSize);
 
 		// one alive packet right after joining...
 		ZeroMemory(buffer, 2048);
 		BufferSize = PackKeepAlive(&buffer[0], i);
 		SendData((const char*)buffer, BufferSize, i);
 
-		Debug(&buffer[0], BufferSize);
+		//Debug(&buffer[0], BufferSize);
 	}
 	//Close(0);
 }
