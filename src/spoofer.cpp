@@ -298,7 +298,7 @@ void DisconnectDummies()
 	for(i = 0; i < 64; i++)
 	{
 		ZeroMemory(buffer, sizeof(buffer));
-		BufferSize = PackDisonnect(&buffer[0], i);
+		BufferSize = PackDisconnect(&buffer[0], i);
 		SendData((const char*)buffer, BufferSize, i);
 	}
 }
@@ -359,11 +359,11 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				Char++;
 			}
 
-			if(strstr(aCmd[0], "status")) // test
+			if(strcmp(aCmd[0], "status") == 0) // test
 			{
 				send(g_Client, "Working fine", strlen("Working fine"), 0);
 			}
-			else if(strstr(aCmd[0], "dummies"))
+			else if(strcmp(aCmd[0], "dummies") == 0)
 			{
 				if(aCmd[1][0] && aCmd[2][0] && aCmd[3][0])
 				{
@@ -376,7 +376,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				else
 					send(g_Client, "Please use: dummies <ip> <port> <num>", strlen("Please use: dummies <ip> <port> <num>"), 0);
 			}
-			else if(strstr(aCmd[0], "dcdummies"))
+			else if(strcmp(aCmd[0], "dcdummies") == 0)
 			{
 				DisconnectDummies();
 			}
