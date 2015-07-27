@@ -397,11 +397,12 @@ int PackDisconnect(unsigned char *buffer, int id)
 
 int PackVote(unsigned char *buffer, int id, int v)
 {
-	int BufferSize = StartofPacking(buffer, id, FLAGS_VITAL | FLAGS_FLUSH);
+	int BufferSize = StartofPacking(buffer, id, FLAGS_VITAL);
 
 	AddInt(NETMSGTYPE_CL_VOTE);
 	AddInt(v);
-	return EndofPacking(buffer, BufferSize, id, FLAGS_VITAL | FLAGS_FLUSH);
+	printf("im here.");
+	return EndofPacking(buffer, BufferSize, id, FLAGS_VITAL);
 }
 
 void Reset(int id)
