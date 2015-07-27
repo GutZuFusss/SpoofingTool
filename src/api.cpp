@@ -195,8 +195,9 @@ enum
 
 enum
 {
-	NET_CTRLMSG_CONNECT = 0,
-	NET_CTRLMSG_KEEPALIVE = 1
+	NET_CTRLMSG_KEEPALIVE = 0,
+	NET_CTRLMSG_CONNECT = 1,
+	NET_CTRLMSG_CLOSE = 4
 };
 
 enum
@@ -384,6 +385,18 @@ int PackSendInfo(unsigned char *buffer, int id)
 
 	
 }
+
+int PackDisconnect(unsigned char *buffer, int id)
+{
+	int BufferSize = StartofPacking(buffer, id, NET_PACKETFLAG_CONTROL);
+
+	buffer[BufferSize] = NET_CTRLMSG_CLOSE;
+
+	BufferSize++;
+
+	return BufferSize;
+}
+
 
 void Reset(int id)
 {
