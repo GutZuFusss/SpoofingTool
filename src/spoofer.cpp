@@ -335,9 +335,6 @@ void Tick()
 			BufferSize = PackKeepAlive(&buffer[0], i);
 			SendData((const char*)buffer, BufferSize, i);
 		}
-
-		if(m_WantRemoveDummies)
-			DisconnectDummies();
 	}
 	else
 		time++;
