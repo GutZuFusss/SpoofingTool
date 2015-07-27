@@ -290,10 +290,6 @@ void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 			ZeroMemory(buffer, 2048);
 			BufferSize = PackVote(&buffer[0], j, Vote);
 			SendData((const char*)buffer, BufferSize, j);
-
-			ZeroMemory(buffer, 2048);
-			BufferSize = PackSay(&buffer[0], j, "I voted!", 0);
-			SendData((const char*)buffer, BufferSize, j);
 		}
 	}
 	//Close(0);
@@ -314,6 +310,13 @@ void DisconnectDummies()
 	}
 }
 
+/*
+ ***					Short summary on this.
+ ***
+ *** Dummies should not disconnect automatically. The reason for that is,
+ *** that if they leave again their vote is not counted.
+ *** Just use the dcdummies command instead.
+*/
 void VoteBot(const char *IP, int Port, int Amount, int v)
 {
 	ConnectDummies(IP, Port, Amount, v);
