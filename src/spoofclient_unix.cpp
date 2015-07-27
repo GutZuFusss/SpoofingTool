@@ -31,7 +31,7 @@ int main()
     if (connect(g_Socket, (struct sockaddr*)&info, sizeof(info)) < 0)
         perror("Error in connect()");
 
-    cout << "Connected" << endl;
+    cout << "[Client]: Connecting to server..." << endl;
 
     while(1)
     {
@@ -44,7 +44,7 @@ int main()
 			cout << rBuffer << endl;
 
 cmd:
-		cout << "Send cmd: ";
+		cout << ">> ";
 		cin.getline(sBuffer, sizeof(sBuffer));
 
 		if(!sBuffer[0])
@@ -52,8 +52,6 @@ cmd:
 
 		if(send(g_Socket, sBuffer, strlen(sBuffer), 0) < 0)
 			perror("Error in send()");
-		else
-			cout << sBuffer << " sent." << endl;
     }
 
     close(g_Socket);
