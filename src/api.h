@@ -12,6 +12,8 @@ int PackEnterGame(unsigned char *buffer, int id);
 
 int PackKeepAlive(unsigned char *buffer, int id);
 
+int PackDisconnect(unsigned char *buffer, int id);
+
 void Reset(int id);
 
 
