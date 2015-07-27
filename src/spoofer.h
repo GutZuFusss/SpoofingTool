@@ -72,8 +72,6 @@ void Output(char *pBuf);
 void Close();
 USHORT checksum(USHORT *buffer, int size);
 
-bool m_WantRemoveDummies;
-
 void ConnectDummies(const char *IP, int Port, int Amount, int Vote);
 void DisconnectDummies();
 
