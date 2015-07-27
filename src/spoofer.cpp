@@ -293,9 +293,14 @@ void DisconnectDummies()
 	unsigned char buffer[2048];
 	int BufferSize = 0;
 
-	ZeroMemory(buffer, sizeof(buffer));
-	BufferSize = PackDisonnect(&buffer[0], j);
-	SendData((const char*)buffer, BufferSize, j);
+	int i = 0;
+
+	for(i = 0; i < 64; i++)
+	{
+		ZeroMemory(buffer, sizeof(buffer));
+		BufferSize = PackDisonnect(&buffer[0], i);
+		SendData((const char*)buffer, BufferSize, i);
+	}
 }
 
 void Tick()
@@ -371,7 +376,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				else
 					send(g_Client, "Please use: dummies <ip> <port> <num>", strlen("Please use: dummies <ip> <port> <num>"), 0);
 			}
-			else if(strstr(aCmd[0], "status")) // test
+			else if(strstr(aCmd[0], "dcdummies"))
 			{
 				DisconnectDummies();
 			}
