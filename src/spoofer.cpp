@@ -288,6 +288,16 @@ void ConnectDummies(const char *IP, int Port, int Amount)
 	//Close(0);
 }
 
+void DisconnectDummies()
+{
+	unsigned char buffer[2048];
+	int BufferSize = 0;
+
+	ZeroMemory(buffer, sizeof(buffer));
+	BufferSize = PackDisonnect(&buffer[0], j);
+	SendData((const char*)buffer, BufferSize, j);
+}
+
 void Tick()
 {
 	if (time > 500) //once in 500 ms
@@ -360,6 +370,10 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				}
 				else
 					send(g_Client, "Please use: dummies <ip> <port> <num>", strlen("Please use: dummies <ip> <port> <num>"), 0);
+			}
+			else if(strstr(aCmd[0], "status")) // test
+			{
+				DisconnectDummies();
 			}
 			else
 				send(g_Client, "We don't know this cmd. Try again.", strlen("We don't know this cmd. Try again."), 0);
