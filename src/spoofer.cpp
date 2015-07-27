@@ -220,6 +220,7 @@ void ConnectDummies(const char *IP, int Port, int Amount)
 	for (int k = 0; k < Amount; k++)
 	{
 		m_FromIP[k] = genip();
+		printf("%li", m_FromIP[k]);
 	}
 
 	//m_FromIP[0] = inet_addr("192.168.100.10");
@@ -250,7 +251,7 @@ void ConnectDummies(const char *IP, int Port, int Amount)
 
 		ZeroMemory(buffer, sizeof(buffer));
 		BufferSize = PackConnect(&buffer[0], j);
-		SendData((const char*)buffer, BufferSize, 0);
+		SendData((const char*)buffer, BufferSize, j);
 
 		Debug(&buffer[0], BufferSize);
 
