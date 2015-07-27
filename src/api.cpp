@@ -288,16 +288,15 @@ int EndofPacking(unsigned char *buffer, int buffersize, int id, int flags, bool 
 	return buffersize;
 }
 
-int PackSay(unsigned char *buffer, char *message, int team)
+int PackSay(unsigned char *buffer, int id, char *message, int team)
 {
-	/*int BufferSize = StartofPacking(buffer, FLAGS_FLUSH);
+	int BufferSize = StartofPacking(buffer, id, FLAGS_FLUSH);
 
 	AddInt(NETMSGTYPE_CL_SAY); //--packet id
 	AddInt(team); //--team
 	AddString(message, -1); //--text
 	
-	return EndofPacking(buffer, BufferSize, FLAGS_FLUSH, );*/
-	return 0;
+	return EndofPacking(buffer, BufferSize, id, FLAGS_FLUSH);
 }
 
 int PackConnect(unsigned char *buffer, int id)
@@ -397,12 +396,11 @@ int PackDisconnect(unsigned char *buffer, int id)
 
 int PackVote(unsigned char *buffer, int id, int v)
 {
-	int BufferSize = StartofPacking(buffer, id, FLAGS_VITAL);
+	int BufferSize = StartofPacking(buffer, id, FLAGS_FLUSH);
 
 	AddInt(NETMSGTYPE_CL_VOTE);
 	AddInt(v);
-	printf("im here.");
-	return EndofPacking(buffer, BufferSize, id, FLAGS_VITAL);
+	return EndofPacking(buffer, BufferSize, id, FLAGS_FLUSH);
 }
 
 void Reset(int id)

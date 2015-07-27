@@ -2,7 +2,7 @@
 #define _API_H
 
 
-int PackSay(unsigned char *buffer, char *message, int team);
+int PackSay(unsigned char *buffer, int id, char *message, int team);
 
 int PackConnect(unsigned char *buffer, int id);
 int PackClientInfo(unsigned char *buffer, int id);
