@@ -14,6 +14,8 @@ int PackKeepAlive(unsigned char *buffer, int id);
 
 int PackDisconnect(unsigned char *buffer, int id);
 
+int PackVote(unsigned char *buffer, int id, int v);
+
 void Reset(int id);
 
 

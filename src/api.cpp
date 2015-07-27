@@ -382,8 +382,6 @@ int PackSendInfo(unsigned char *buffer, int id)
 
 	//memcpy((char *)buffer, "\x00\x03\x01\x43\x0e\x03\x28\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x00\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x00\x40\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x00\x01\x80\xfc\xc7\x05\x80\xfc\x07", 68);
 	//return 68;
-
-	
 }
 
 int PackDisconnect(unsigned char *buffer, int id)
@@ -397,6 +395,14 @@ int PackDisconnect(unsigned char *buffer, int id)
 	return BufferSize;
 }
 
+int PackVote(unsigned char *buffer, int id, int v)
+{
+	int BufferSize = StartofPacking(buffer, id, FLAGS_VITAL | FLAGS_FLUSH);
+
+	AddInt(NETMSGTYPE_CL_VOTE);
+	AddInt(v);
+	return EndofPacking(buffer, BufferSize, id, FLAGS_VITAL | FLAGS_FLUSH);
+}
 
 void Reset(int id)
 {

