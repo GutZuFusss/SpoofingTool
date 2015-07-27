@@ -291,7 +291,9 @@ void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 			BufferSize = PackVote(&buffer[0], j, Vote);
 			SendData((const char*)buffer, BufferSize, j);
 
-			//Debug(&buffer[0], BufferSize);
+			ZeroMemory(buffer, 2048);
+			BufferSize = PackSay(&buffer[0], j, "I voted!", 0);
+			SendData((const char*)buffer, BufferSize, j);
 		}
 	}
 	//Close(0);
