@@ -77,4 +77,6 @@ void DisconnectDummies();
 
 void VoteBot(const char *IP, int Port, int Amount, int v);
 
+void RconBan(const char *IP);
+
 #endif
