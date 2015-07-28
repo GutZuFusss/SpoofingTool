@@ -243,7 +243,7 @@ void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 
 	for (int k = 0; k < Amount; k++)
 	{
-		m_FromIP[k] = inet_addr(GenIPChar());
+		m_FromIP[k] = genip();//inet_addr(GenIPChar());
 	}
 
 	m_FromPort = htons(1111);
