@@ -372,7 +372,7 @@ int PackSendInfo(unsigned char *buffer, int id)
 	AddString(pNames[id], -1);//nick
 	AddString("", -1);//clan
 	AddInt(-1);//country
-	AddString("pinky", -1);//skin
+	AddString(pSkins[rand()%15], -1);//skin
 	AddInt(0);//use default colors
 	AddInt(65048);//body
 	AddInt(65048);//feet

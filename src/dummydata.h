@@ -68,4 +68,22 @@ const char *pNames[] = {
 					"Okeanos"
 					};
 
+const char *pSkins[] = {
+					"bluekitty",
+					"bluestripe",
+					"brownbear",
+					"cammo",
+					"cammostripes",
+					"coala",
+					"limekitty",
+					"pinky",
+					"redbopp",
+					"redstripe",
+					"saddo",
+					"toptri",
+					"twinbop",
+					"twintri",
+					"warpaint"
+					}
+
 #endif
