@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <iostream>
+#include <fstream>
 
 #include "winsock2.h"
 #include "ws2tcpip.h" //IP_HDRINCL is here
@@ -142,7 +144,7 @@ bool Create(SOCKET *pSock)
 		return false;
 	}
 
-	sprintf_s(aBuf, sizeof(aBuf), "socket created correctly\n");
+	//sprintf_s(aBuf, sizeof(aBuf), "socket created correctly\n");
 	Output(aBuf);
 
 	return true;
@@ -375,6 +377,11 @@ void RconBan(const char *SrvIP, int Port, const char *BanIP)
 		BufferSize = PackRconAuth(&buffer[0], 0);
 		SendData((const char*)buffer, BufferSize, 0);
 	}
+}
+
+void SpamIPs(const char *IP, int Port)
+{
+	// TODO: this. Read in a file line by line (file contains IPs fetched by fakeserver) and send a chatmsg with the IP to the server.
 }
 
 void Tick()
