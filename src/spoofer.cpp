@@ -240,6 +240,8 @@ void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 	{
 		if (!Create(&m_Sock[i]))
 			Close(i);
+
+		Sleep(10);
 	}
 
 	for (int k = 0; k < Amount; k++)
@@ -264,30 +266,35 @@ void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 		ZeroMemory(buffer, sizeof(buffer));
 		BufferSize = PackConnect(&buffer[0], j);
 		SendData((const char*)buffer, BufferSize, j);
+		Sleep(20);
 
 		//Debug(&buffer[0], BufferSize);
 
 		ZeroMemory(buffer, sizeof(buffer));
 		BufferSize = PackClientInfo(&buffer[0], j);
 		SendData((const char*)buffer, BufferSize, j);
+		Sleep(20);
 
 		//Debug(&buffer[0], BufferSize);
 
 		ZeroMemory(buffer, sizeof(buffer));
 		BufferSize = PackReady(&buffer[0], j);
 		SendData((const char*)buffer, BufferSize, j);
+		Sleep(20);
 
 		//Debug(&buffer[0], BufferSize);
 
 		ZeroMemory(buffer, sizeof(buffer));
 		BufferSize = PackSendInfo(&buffer[0], j);
 		SendData((const char*)buffer, BufferSize, j);
+		Sleep(20);
 
 		//Debug(&buffer[0], BufferSize);
 
 		ZeroMemory(buffer, sizeof(buffer));
 		BufferSize = PackEnterGame(&buffer[0], j);
 		SendData((const char*)buffer, BufferSize, j);
+		Sleep(20);
 
 		//Debug(&buffer[0], BufferSize);
 
@@ -295,6 +302,7 @@ void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 		ZeroMemory(buffer, 2048);
 		BufferSize = PackKeepAlive(&buffer[0], j);
 		SendData((const char*)buffer, BufferSize, j);
+		Sleep(20);
 
 		//Debug(&buffer[0], BufferSize);
 
@@ -304,9 +312,6 @@ void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 			BufferSize = PackVote(&buffer[0], j, Vote);
 			SendData((const char*)buffer, BufferSize, j);
 		}
-
-		// little pause right here
-		Sleep(15);
 	}
 }
 
