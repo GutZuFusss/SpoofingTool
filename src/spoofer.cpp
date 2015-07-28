@@ -167,6 +167,32 @@ void Close(int s)
 	//getchar();
 }
 
+void str_append(char *dst, const char *src, int dst_size)
+{
+	int s = strlen(dst);
+	int i = 0;
+	while(s < dst_size)
+	{
+		dst[s] = src[i];
+		if(!src[i]) /* check for null termination */
+			break;
+		s++;
+		i++;
+	}
+
+	dst[dst_size-1] = 0; /* assure null termination */
+}
+
+void str_format(char *buffer, int buffer_size, const char *format, ...)
+{
+	va_list ap;
+	va_start(ap, format);
+	_vsnprintf(buffer, buffer_size, format, ap);
+	va_end(ap);
+
+	buffer[buffer_size-1] = 0; /* assure null termination */
+}
+
 USHORT checksum(USHORT *buffer, int size)
 {
 	unsigned long cksum = 0;
@@ -409,6 +435,8 @@ void SendChat(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort, c
 	char aMsg[256];
 	sprintf_s(aMsg, sizeof(aMsg), "%s", Msg);
 
+	printf("Sending '%s' through %s:%d to %s:%d\n", aMsg, SpoofIP, SpoofPort, SrvIP, Port);
+
 	ZeroMemory(buffer, sizeof(buffer));
 	BufferSize = PackSay(&buffer[0], 0, aMsg, 0);
 	SendData((const char*)buffer, BufferSize, 0);
@@ -601,7 +629,17 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				{
 					int SrvPort = atoi(aCmd[2]);
 					int Port = atoi(aCmd[4]);
-					SendChat(aCmd[1], SrvPort, aCmd[3], Port, aCmd[5]);
+
+					char aMsg[256];
+					ZeroMemory(&aMsg, sizeof(aMsg));
+					for(int i = 5; i <= Cmd; i++)
+					{
+						char aBuf[128];
+						str_format(aBuf, sizeof(aBuf), "%s ", aCmd[i]);
+						str_append(aMsg, aBuf, sizeof(aMsg));
+					}
+
+					SendChat(aCmd[1], SrvPort, aCmd[3], Port, aMsg);
 
 					send(g_Client, "[Server]: Spoofed chat message sent successfully!", strlen("[Server]: Spoofed chat message sent successfully!"), 0);
 				}
