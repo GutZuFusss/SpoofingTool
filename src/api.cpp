@@ -369,7 +369,7 @@ int PackSendInfo(unsigned char *buffer, int id)
 	int BufferSize = StartofPacking(buffer, id, FLAGS_VITAL | FLAGS_FLUSH);
 
 	AddInt(NETMSGTYPE_CL_STARTINFO);
-	AddString(pName[id], -1);//nick
+	AddString(pNames[id], -1);//nick
 	AddString("", -1);//clan
 	AddInt(-1);//country
 	AddString("pinky", -1);//skin
