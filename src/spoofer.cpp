@@ -212,7 +212,6 @@ unsigned long genip()
 
 const char *GenIPChar()
 {
-	srand((unsigned)time(0)); 
 	int Oktett[4];
 	static char aIP[32];
 	
@@ -227,6 +226,8 @@ const char *GenIPChar()
 	}
 	
 	sprintf(aIP, "%i.%i.%i.%i", Oktett[0], Oktett[1], Oktett[2], Oktett[3]);
+
+	printf("%s\n", aIP);
 	return aIP;
 }
 
@@ -243,7 +244,7 @@ void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 
 	for (int k = 0; k < Amount; k++)
 	{
-		m_FromIP[k] = genip();//inet_addr(GenIPChar());
+		m_FromIP[k] = inet_addr(GenIPChar());
 	}
 
 	m_FromPort = htons(1111);
@@ -428,6 +429,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 
 	SOCKET g_Client = (SOCKET)lpParam; 
 	char buffer[256];
+	srand(time(0));
 
 	send(g_Client, "[Server]: Connection established! Welcome!", strlen("[Server]: Connection established! Welcome!"), 0);
 
