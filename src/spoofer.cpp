@@ -228,7 +228,7 @@ const char *GenIPChar()
 		Oktett[0] = rand()%255+1;
 	}
 	
-	sprintf(aIP, "%i.%i.%i.%i", Oktett[0], Oktett[1], Oktett[2], Oktett[3]);
+	sprintf_s(aIP, sizeof(aIP), "%i.%i.%i.%i", Oktett[0], Oktett[1], Oktett[2], Oktett[3]);
 
 	//printf("%s\n", aIP);
 	return aIP;
@@ -389,7 +389,7 @@ void RconBan(const char *SrvIP, int Port, const char *BanIP)
 	m_SendRcon = true;
 }
 
-void SendChat(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort, char *Msg)
+void SendChat(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort, const char *Msg)
 {
 	// ToDo: More than one word as Msg ._. --Note by Meskalin: This should not be done here, but where the command is received.
 
@@ -406,8 +406,11 @@ void SendChat(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort, c
 	int BufferSize = 0;
 	Reset(0);
 
+	char aMsg[256];
+	sprintf_s(aMsg, sizeof(aMsg), "%s", Msg);
+
 	ZeroMemory(buffer, sizeof(buffer));
-	BufferSize = PackSay(&buffer[0], 0, Msg, 0);
+	BufferSize = PackSay(&buffer[0], 0, aMsg, 0);
 	SendData((const char*)buffer, BufferSize, 0);
 }
 
@@ -430,11 +433,11 @@ void SpamIPs(const char *IP, int Port)
 		int Char = 0;
 
 		// split the string
-		for(int i = 0; i < strlen(Line.c_str()); i++)
+		for(unsigned int i = 0; i < strlen(Line.c_str()); i++)
 		{
 			if(Line.c_str()[i] == ':')
 			{
-				aSplit++;
+				Split++;
 				Char = 0;
 				continue;
 			}
@@ -503,7 +506,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 
 	SOCKET g_Client = (SOCKET)lpParam; 
 	char buffer[256];
-	srand(time(0));
+	srand((unsigned int)time(0));
 
 	send(g_Client, "[Server]: Connection established! Welcome!", strlen("[Server]: Connection established! Welcome!"), 0);
 
@@ -519,7 +522,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 			int Char = 0;
 
 			// split the command to extract the parameters
-			for(int i = 0; i < strlen(buffer); i++)
+			for(unsigned int i = 0; i < strlen(buffer); i++)
 			{
 				if(buffer[i] == ' ')
 				{
