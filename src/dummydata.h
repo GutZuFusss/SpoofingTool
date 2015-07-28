@@ -84,6 +84,6 @@ const char *pSkins[] = {
 					"twinbop",
 					"twintri",
 					"warpaint"
-					}
+					};
 
 #endif
