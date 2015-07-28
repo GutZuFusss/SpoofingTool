@@ -32,7 +32,7 @@ typedef struct
 
 int AmountofDummies;
 
-int time; //used in tick as a timer
+int m_Tick; //used in tick as a timer
 
 char m_aMessage[MAX_MESSAGE];
 SOCKET m_Sock[64];

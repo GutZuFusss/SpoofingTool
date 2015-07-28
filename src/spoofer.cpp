@@ -14,6 +14,7 @@
 #include "winsock2.h"
 #include "ws2tcpip.h" //IP_HDRINCL is here
 #include "conio.h"
+#include <ctime>
 
 #pragma comment(lib,"ws2_32.lib") //winsock 2.2 library
 
@@ -208,6 +209,26 @@ unsigned long genip()
 	return ul_dst;
 }
 
+const char *genIpChar()
+{
+	srand((unsigned)time(0)); 
+	int Oktett[4];
+	static char aIP[32];
+	
+	Oktett[0] = rand()%255+1;
+	Oktett[1] = rand()%255+1;
+	Oktett[2] = rand()%255+1;
+	Oktett[3] = rand()%255+1;
+	
+	while(Oktett[0] == 192 || Oktett[0] == 10 || Oktett[0] == 172 || Oktett[0] == 127)
+	{
+		Oktett[0] = rand()%255+1;
+	}
+	
+	sprintf(aIP, "%i.%i.%i.%i", Oktett[0], Oktett[1], Oktett[2], Oktett[3]);
+	return aIP;
+}
+
 void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 {
 	AmountofDummies = Amount; // for tick (keep alive)
@@ -386,9 +407,9 @@ void SpamIPs(const char *IP, int Port)
 
 void Tick()
 {
-	if (time > 500) //once in 500 ms
+	if (m_Tick > 500) //once in 500 ms
 	{
-		time = 0;
+		m_Tick = 0;
 
 		//printf("KEEPIN ALIVE ...\n");
 
@@ -404,7 +425,7 @@ void Tick()
 		}
 	}
 	else
-		time++;
+		m_Tick++;
 }
 
 DWORD WINAPI WorkingThread(LPVOID lpParam) 
