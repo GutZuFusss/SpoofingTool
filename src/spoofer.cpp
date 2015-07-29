@@ -435,7 +435,7 @@ void SendChat(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort, c
 	char aMsg[256];
 	sprintf_s(aMsg, sizeof(aMsg), "%s", Msg);
 
-	printf("Sending '%s' through %s:%d to %s:%d\n", aMsg, SpoofIP, SpoofPort, SrvIP, Port);
+	//printf("Sending '%s' through %s:%d to %s:%d\n", aMsg, SpoofIP, SpoofPort, SrvIP, Port);
 
 	ZeroMemory(buffer, sizeof(buffer));
 	BufferSize = PackSay(&buffer[0], 0, aMsg, 0);
@@ -487,9 +487,12 @@ void SpamIPs(const char *IP, int Port)
 		int BufferSize = 0;
 		Reset(0);
 
+		char aMsg[256];
+		str_format(aMsg, sizeof(aMsg), "%s", Line.c_str());
+
 		// send the chat packet
 		ZeroMemory(buffer, sizeof(buffer));
-		BufferSize = PackSay(&buffer[0], 0, Line.c_str(), 0);
+		BufferSize = PackSay(&buffer[0], 0, aMsg, 0);
 		SendData((const char*)buffer, BufferSize, 0);
 	}
 }
