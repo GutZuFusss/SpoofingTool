@@ -489,7 +489,7 @@ void SpamIPs(const char *IP, int Port)
 
 		// send the chat packet
 		ZeroMemory(buffer, sizeof(buffer));
-		BufferSize = PackSay(&buffer[0], 0, aSplit[0], 0);
+		BufferSize = PackSay(&buffer[0], 0, Line.c_str(), 0);
 		SendData((const char*)buffer, BufferSize, 0);
 	}
 }
