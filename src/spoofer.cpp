@@ -609,9 +609,14 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				{
 					int Port = atoi(aCmd[2]);
 					int Num = atoi(aCmd[3]);
-					ConnectDummies(aCmd[1], Port, Num, 0);
+					if(Num > 0 && Num <= 64)
+					{
+						ConnectDummies(aCmd[1], Port, Num, 0);
 
-					send(g_Client, "[Server]: Dummies connected!", strlen("[Server]: Dummies connected!"), 0);
+						send(g_Client, "[Server]: Dummies connected!", strlen("[Server]: Dummies connected!"), 0);
+					}
+					else
+						send(g_Client, "[Server]: Please select a amount between 1 and 64!", strlen("[Server]: Please select a amount between 1 and 64!"), 0);
 				}
 				else
 					send(g_Client, "[Server]: Please use: dummies <ip> <port> <num>", strlen("[Server]: Please use: dummies <ip> <port> <num>"), 0);
@@ -628,9 +633,15 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 					int Port = atoi(aCmd[2]);
 					int Num = atoi(aCmd[3]);
 					int Vote = atoi(aCmd[4]);
-					VoteBot(aCmd[1], Port, Num, Vote);
+					if(Num > 0 && Num <= 64)
+					{
+						VoteBot(aCmd[1], Port, Num, Vote);
 
-					send(g_Client, "[Server]: Dummies connected! (Voting...)", strlen("[Server]: Dummies connected! (Voting...)"), 0);
+						send(g_Client, "[Server]: Dummies connected! (Voting...)", strlen("[Server]: Dummies connected! (Voting...)"), 0);
+					}
+					else
+						send(g_Client, "[Server]: Please select a amount between 1 and 64!", strlen("[Server]: Please select a amount between 1 and 64!"), 0);
+				
 				}
 				else
 					send(g_Client, "[Server]: Please use: votebot <ip> <port> <num> <vote>", strlen("[Server]: Please use: votebot <ip> <port> <num> <vote>"), 0);
