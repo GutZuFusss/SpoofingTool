@@ -330,7 +330,7 @@ int PackClientInfo(unsigned char *buffer, int id)
 
 	AddInt(NETMSG_INFO); //--packet id
 	AddString("0.6 626fce9a778df4d4", 128);// GAME_NETVERSION "0.6 626fce9a778df4d4"
-	AddString("", 128); // password (to teh server?)
+	AddString("kek", 128); // password (to teh server?)
 
 	return EndofPacking(buffer, BufferSize, id, FLAGS_VITAL | FLAGS_FLUSH, true);
 
