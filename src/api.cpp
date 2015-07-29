@@ -403,6 +403,14 @@ int PackVote(unsigned char *buffer, int id, int v)
 	return EndofPacking(buffer, BufferSize, id, FLAGS_FLUSH);
 }
 
+int PackKill(unsigned char *buffer, int id)
+{
+	int BufferSize = StartofPacking(buffer, id, FLAGS_FLUSH);
+
+	AddInt(NETMSGTYPE_CL_KILL);
+	return EndofPacking(buffer, BufferSize, id, FLAGS_FLUSH);
+}
+
 int PackRconAuth(unsigned char *buffer, int id)
 {
 	/*int BufferSize = StartofPacking(buffer, id, FLAGS_FLUSH);

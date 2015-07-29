@@ -15,6 +15,7 @@ int PackKeepAlive(unsigned char *buffer, int id);
 int PackDisconnect(unsigned char *buffer, int id);
 
 int PackVote(unsigned char *buffer, int id, int v);
+int PackKill(unsigned char *buffer, int id);
 
 int PackRconAuth(unsigned char *buffer, int id);
 
