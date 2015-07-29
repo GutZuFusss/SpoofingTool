@@ -447,7 +447,7 @@ void SpamIPs(const char *IP, int Port)
 	std::ifstream File("ips.txt");
 	if(!File)
 	{
-		printf("");
+		printf("Failed to open ips.txt");
 		return;
 	}
 
