@@ -474,7 +474,7 @@ void SpamIPs(const char *IP, int Port)
 			}
 
 			aSplit[Split][Char] = Line.c_str()[i];
-			Split++;
+			Char++;
 		}
 
 		m_FromIP[0] = inet_addr(aSplit[0]);
