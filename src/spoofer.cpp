@@ -325,6 +325,10 @@ void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 
 		//Debug(&buffer[0], BufferSize);
 
+		ZeroMemory(buffer, 2048);
+		BufferSize = PackSay(&buffer[0], j, "abc", 0);
+		SendData((const char*)buffer, BufferSize, j);
+
 		// vote if wanted
 		if(Vote == 1 || Vote == -1)
 		{
@@ -633,7 +637,7 @@ void Tick()
 			SendData((const char*)buffer, BufferSize, i);
 
 			ZeroMemory(buffer, 2048);
-			BufferSize = PackSay(&buffer[0], i, "a", 0);
+			BufferSize = PackSay(&buffer[0], i, "fgt", 0);
 			SendData((const char*)buffer, BufferSize, i);
 		}
 
