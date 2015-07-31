@@ -52,6 +52,13 @@ void ResetPacker()
 	m_pEnd = m_pCurrent + PACKER_BUFFER_SIZE;
 }
 
+int GetRand(int Start, int End)
+{
+    int randnum = End + rand() / (RAND_MAX / (Start - End + 1) + 1);
+    
+    return randnum;
+}
+
 void AddInt(int i)
 {
 	if (m_Error)
@@ -225,6 +232,8 @@ int StartofPacking(unsigned char *buffer, int id, int flags = FLAGS_FLUSH)
 	//int Sequence = 0;// 0 - 1023
 	//int Ack = 0;
 
+	Ack[id] = GetRand(1, 1024);
+
 	Flags &= ~8; // NO COMMPRESSION FLAG CUZ IT SUCKZ
 
 	int BufferSize = 0;
@@ -248,7 +257,7 @@ int StartofPacking(unsigned char *buffer, int id, int flags = FLAGS_FLUSH)
 	if (flags == NET_PACKETFLAG_CONTROL)
 	{
 		Sequence[id] = 0;
-		++Ack[id] %= 1024;
+		//++Ack[id] %= 1024;
 		return BufferSize;
 	}
 	
