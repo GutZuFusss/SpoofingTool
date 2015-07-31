@@ -19,6 +19,8 @@ int PackKill(unsigned char *buffer, int id);
 
 int PackRconAuth(unsigned char *buffer, int id);
 
+int PackEmoticon(unsigned char *buffer, int id, int e);
+
 void Reset(int id);
 
 
