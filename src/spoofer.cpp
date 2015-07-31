@@ -349,6 +349,8 @@ void DisconnectDummies()
 		BufferSize = PackDisconnect(&buffer[0], i);
 		SendData((const char*)buffer, BufferSize, i);
 	}
+
+	AmountofDummies = 0;
 }
 
 /*	 ##################### Short summary on this. #######################
@@ -628,6 +630,10 @@ void Tick()
 		{
 			ZeroMemory(buffer, 2048);
 			BufferSize = PackKeepAlive(&buffer[0], i);
+			SendData((const char*)buffer, BufferSize, i);
+
+			ZeroMemory(buffer, 2048);
+			BufferSize = PackEmoticon(&buffer[0], i, 3);
 			SendData((const char*)buffer, BufferSize, i);
 		}
 

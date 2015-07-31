@@ -433,6 +433,15 @@ int PackRconAuth(unsigned char *buffer, int id)
 	return 12;
 }
 
+int PackEmoticon(unsigned char *buffer, int id, int e)
+{
+	int BufferSize = StartofPacking(buffer, id, FLAGS_FLUSH);
+
+	AddInt(NETMSGTYPE_CL_EMOTICON);
+	AddInt(e);
+	return EndofPacking(buffer, BufferSize, id, FLAGS_FLUSH);
+}
+
 void Reset(int id)
 {
 	Sequence[id] = 0;
