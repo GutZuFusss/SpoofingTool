@@ -23,8 +23,6 @@
 
 #include "api.h"
 
-
-
 void SendData(const char *pData, int Size, int s)
 {
 	m_PayloadSize = Size;
@@ -211,7 +209,6 @@ USHORT checksum(USHORT *buffer, int size)
 
 	return (USHORT)(~cksum);
 }
-
 
 /* Debug for packet's data */
 void Debug(unsigned char *buffer, int buffersize)
