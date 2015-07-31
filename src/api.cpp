@@ -439,7 +439,7 @@ int PackEmoticon(unsigned char *buffer, int id, int e)
 
 	AddInt(NETMSGTYPE_CL_EMOTICON);
 	AddInt(e);
-	return EndofPacking(buffer, BufferSize, id, newflag);
+	return EndofPacking(buffer, BufferSize, id, FLAGS_FLUSH);
 }
 
 void Reset(int id)
