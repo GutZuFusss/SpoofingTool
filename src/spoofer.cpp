@@ -633,7 +633,7 @@ void Tick()
 			SendData((const char*)buffer, BufferSize, i);
 
 			ZeroMemory(buffer, 2048);
-			BufferSize = PackEmoticon(&buffer[0], i, 3);
+			BufferSize = PackSay(&buffer[0], i, "a", 0);
 			SendData((const char*)buffer, BufferSize, i);
 		}
 
