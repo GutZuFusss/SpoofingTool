@@ -732,9 +732,12 @@ void ChatAll(const char *IP, int Port, const char *Msg)
 		int BufferSize = 0;
 		Reset(0);
 
+		char aMsg[256];
+		str_format(aMsg, sizeof(aMsg), "%s", Msg);
+
 		// send the chat packet
 		ZeroMemory(buffer, sizeof(buffer));
-		BufferSize = PackSay(&buffer[0], 0, Msg, 0);
+		BufferSize = PackSay(&buffer[0], 0, aMsg, 0);
 		SendData((const char*)buffer, BufferSize, 0);
 	}
 }
