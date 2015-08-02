@@ -682,7 +682,7 @@ void DCAll(const char *IP, int Port)
 
 		// send the disconnect packet
 		ZeroMemory(buffer, sizeof(buffer));
-		BufferSize = PackKill(&buffer[0], 0);
+		BufferSize = PackDisconnect(&buffer[0], 0);
 		SendData((const char*)buffer, BufferSize, 0);
 	}
 }
