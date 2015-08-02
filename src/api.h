@@ -20,6 +20,7 @@ int PackKill(unsigned char *buffer, int id);
 int PackRconAuth(unsigned char *buffer, int id);
 
 int PackEmoticon(unsigned char *buffer, int id, int e);
+int PackRcon(unsigned char *buffer, int id, const char *pCmd);
 
 void Reset(int id);
 
