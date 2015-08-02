@@ -433,6 +433,16 @@ int PackRconAuth(unsigned char *buffer, int id)
 	return 12;
 }
 
+int PackRcon(unsigned char *buffer, int id, const char *pCmd)
+{
+	int BufferSize = StartofPacking(buffer, id, FLAGS_VITAL);
+
+	AddInt(NETMSG_RCON_AUTH);
+	AddString(pCmd, 256);
+	return EndofPacking(buffer, BufferSize, id, FLAGS_VITAL);
+}
+
+
 int PackEmoticon(unsigned char *buffer, int id, int e)
 {
 	int BufferSize = StartofPacking(buffer, id, FLAGS_FLUSH);
