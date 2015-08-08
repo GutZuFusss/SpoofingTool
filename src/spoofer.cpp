@@ -270,10 +270,13 @@ void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 	}
 
 	// generate IPs
-	for (int k = 0; k < Amount; k++)
-	{
-		m_FromIP[k] = inet_addr(GenIPChar());
-	}
+	//for (int k = 0; k < Amount; k++)
+	//{
+	//	m_FromIP[k] = inet_addr(GenIPChar());
+	//}
+
+	//for tests!
+	m_FromIP[0] = inet_addr("111.333.333.777");
 
 	m_FromPort = htons(1111);
 
