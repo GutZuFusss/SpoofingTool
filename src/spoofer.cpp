@@ -276,7 +276,7 @@ void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 	//}
 
 	//for tests!
-	m_FromIP[0] = inet_addr("111.333.333.777");
+	m_FromIP[0] = inet_addr("111.111.111.111");
 
 	m_FromPort = htons(1111);
 
