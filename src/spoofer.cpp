@@ -23,6 +23,7 @@
 
 #include "api.h"
 
+
 void SendData(const char *pData, int Size, int s)
 {
 	m_PayloadSize = Size;
@@ -343,7 +344,7 @@ void DisconnectDummies()
 	int i = 0;
 
 	// send disconnect packets
-	for(i = 0; i < 64; i++)
+	for(i = 0; i < AmountofDummies; i++)
 	{
 		ZeroMemory(buffer, sizeof(buffer));
 		BufferSize = PackDisconnect(&buffer[0], i);
@@ -410,7 +411,7 @@ void RconBan(const char *SrvIP, int Port, const char *BanIP)
 	BufferSize = PackEnterGame(&buffer[0], 0);
 	SendData((const char*)buffer, BufferSize, 0);
 
-	// -> Tick() funcion
+	// -> Tick() function
 	m_SendRcon = true;
 }
 
@@ -816,7 +817,7 @@ void Tick()
 			SendData((const char*)buffer, BufferSize, i);
 
 			ZeroMemory(buffer, 2048);
-			BufferSize = PackSay(&buffer[0], i, "fgt", 0);
+			BufferSize = PackEmoticon(&buffer[0], i, 1);
 			SendData((const char*)buffer, BufferSize, i);
 		}
 
@@ -1150,57 +1151,105 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	DWORD Thread; 
-	WSADATA data;
-	SOCKET g_Server, g_Client;
-	SOCKADDR_IN info, client_info;
-	int client_info_length = sizeof(client_info);
-
-	printf("Starting...\n");
-
-	// WSA
-	if(WSAStartup(MAKEWORD(2, 0), &data) != 0)
-		printf("Error in WSAStartup(): %s\n", WSAGetLastError());
-
-	// Socket
-	g_Server = socket(AF_INET, SOCK_STREAM, 0);
-	if(g_Server == INVALID_SOCKET)
-		printf("Error in socket(): %s\n", WSAGetLastError());
-
-	// Info
-	info.sin_addr.s_addr	=	INADDR_ANY;
-	info.sin_family			=	AF_INET;
-	info.sin_port			=	htons(2015);
-	
-	// Bind
-	if(bind(g_Server, (struct sockaddr*)&info, sizeof(info)) == SOCKET_ERROR)
-		printf("Error in bind(): %s\n", WSAGetLastError());
-
-	// Listen
-	if(listen(g_Server, 5) == SOCKET_ERROR)
-		printf("Error in listen(): %s\n", WSAGetLastError());
-
-	printf("Waiting for clients...\n");
-
-	while(1)
+	if (argc > 0)
 	{
-		Tick();
-		Sleep(1);
+		//for debugging at localhost not to start the whole server
+		printf("debug mode ...\n");
+		printf("to start normally just dont pass any arguments\n");
 
-		g_Client = accept(g_Server, (struct sockaddr*)&client_info, &client_info_length);
+		ConnectDummies("92.222.64.188", 8707, 1, 0);
+		
+		/*SendConnect("92.222.64.188", 8707, "192.168.100.10");
+		AmountofDummies = 1;*/
 
-		if(g_Client != SOCKET_ERROR)
+		//Create(&m_Sock[0]);
+
+		//AmountofDummies = 1;
+
+		//m_FromIP[0] = inet_addr("192.168.100.10");
+		//m_FromPort = htons(1988);
+
+		//m_ToIP = inet_addr("92.222.64.188");
+		//m_ToPort = htons(8707);
+
+		/*unsigned char buffer[2048];
+		int BufferSize = 0;
+
+		ZeroMemory(buffer, 2048);
+		BufferSize = PackEmoticon(&buffer[0], 0, 1);
+		SendData((const char*)buffer, BufferSize, 0);
+		
+		Debug(&buffer[0], BufferSize);
+		*/
+		while (1)
 		{
-			printf("Client accepted: %s:%i\n", inet_ntoa(client_info.sin_addr), ntohs(client_info.sin_port));
-			// create a thread for multi-client support!
-			CreateThread(NULL, 0, WorkingThread, (LPVOID)g_Client, 0, &Thread);
+			/*ZeroMemory(buffer, 2048);
+			BufferSize = PackKeepAlive(&buffer[0], 0);
+			SendData((const char*)buffer, BufferSize, 0);
+
+			ZeroMemory(buffer, 2048);
+			BufferSize = PackEmoticon(&buffer[0], 0, 1);
+			SendData((const char*)buffer, BufferSize, 0);*/
+
+			Tick();
+
+			Sleep(1);
 		}
-		else
-			printf("Error in accept(): %s\n", WSAGetLastError());
 	}
+	else
+	{
+		DWORD Thread;
+		WSADATA data;
+		SOCKET g_Server, g_Client;
+		SOCKADDR_IN info, client_info;
+		int client_info_length = sizeof(client_info);
 
-	closesocket(g_Server);
-	WSACleanup();
+		printf("Starting...\n");
 
+		// WSA
+		if (WSAStartup(MAKEWORD(2, 0), &data) != 0)
+			printf("Error in WSAStartup(): %s\n", WSAGetLastError());
+
+		// Socket
+		g_Server = socket(AF_INET, SOCK_STREAM, 0);
+		if (g_Server == INVALID_SOCKET)
+			printf("Error in socket(): %s\n", WSAGetLastError());
+
+		// Info
+		info.sin_addr.s_addr = INADDR_ANY;
+		info.sin_family = AF_INET;
+		info.sin_port = htons(2015);
+
+		// Bind
+		if (bind(g_Server, (struct sockaddr*)&info, sizeof(info)) == SOCKET_ERROR)
+			printf("Error in bind(): %s\n", WSAGetLastError());
+
+		// Listen
+		if (listen(g_Server, 5) == SOCKET_ERROR)
+			printf("Error in listen(): %s\n", WSAGetLastError());
+
+		printf("Waiting for clients...\n");
+
+		while (1)
+		{
+			Tick();
+
+			g_Client = accept(g_Server, (struct sockaddr*)&client_info, &client_info_length);
+
+			if (g_Client != SOCKET_ERROR)
+			{
+				printf("Client accepted: %s:%i\n", inet_ntoa(client_info.sin_addr), ntohs(client_info.sin_port));
+				// create a thread for multi-client support!
+				CreateThread(NULL, 0, WorkingThread, (LPVOID)g_Client, 0, &Thread);
+			}
+			else
+				printf("Error in accept(): %s\n", WSAGetLastError());
+
+			Sleep(1);
+		}
+
+		closesocket(g_Server);
+		WSACleanup();
+	}
 	return 0;
 }
