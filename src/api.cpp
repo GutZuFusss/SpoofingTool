@@ -452,6 +452,22 @@ int PackEmoticon(unsigned char *buffer, int id, int e)
 	return EndofPacking(buffer, BufferSize, id, FLAGS_FLUSH);
 }
 
+int PackChangeInfo(unsigned char *buffer, int id, char *name, char *clan, int country, char *skin, int usecustomcolor, int colorbody, int colorfeet)
+{
+	int BufferSize = StartofPacking(buffer, id, FLAGS_VITAL);
+
+	AddInt(NETMSGTYPE_CL_CHANGEINFO);
+	AddString(name, -1);
+	AddString(clan, -1);
+	AddInt(country);
+	AddString(skin, -1);
+	AddInt(usecustomcolor);
+	AddInt(colorbody);
+	AddInt(colorfeet);
+
+	return EndofPacking(buffer, BufferSize, id, FLAGS_VITAL);
+}
+
 void Reset(int id)
 {
 	Sequence[id] = 0;
