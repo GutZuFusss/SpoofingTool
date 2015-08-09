@@ -1224,6 +1224,10 @@ int _tmain(int argc, _TCHAR* argv[])
 	if (g_Server == INVALID_SOCKET)
 		printf("Error in socket(): %s\n", WSAGetLastError());
 
+	// If iMode!=0, non-blocking mode is enabled.
+	u_long iMode = 1;
+	ioctlsocket(g_Server, FIONBIO, &iMode);
+
 	// Info
 	info.sin_addr.s_addr = INADDR_ANY;
 	info.sin_family = AF_INET;
@@ -1251,8 +1255,6 @@ int _tmain(int argc, _TCHAR* argv[])
 			// create a thread for multi-client support!
 			CreateThread(NULL, 0, WorkingThread, (LPVOID)g_Client, 0, &Thread);
 		}
-		else
-			printf("Error in accept(): %s\n", WSAGetLastError());
 
 		Sleep(1);
 	}
