@@ -30,8 +30,6 @@ typedef struct
 	unsigned short Checksum;
 } UDP_HDR;
 
-bool closing = false; //used in update function to close the server
-
 int AmountofDummies;
 
 int m_Tick; //used in tick as a timer

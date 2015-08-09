@@ -1180,25 +1180,6 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				else
 					send(g_Client, "[Server]: Please use: chatall <srvip> <srvport> <msg>", strlen("[Server]: Please use: chatall <srvip> <srvport> <msg>"), 0);
 			}
-			else if (strcmp(aCmd[0], "update") == 0)
-			{
-				if (aCmd[1][0])
-				{
-					send(g_Client, "[Server]: Update started...!", strlen("[Server]: Update started...!"), 0);
-
-					//downloading update with wget
-					char aBuf[256];
-					str_format(aBuf, sizeof(aBuf), "start wget.exe -O spoofer_update.exe --no-check-certificate %s", aCmd[1]);
-					system(aBuf);
-
-					//the update script
-					system("start update.bat");
-
-					closing = true;
-				}
-				else
-					send(g_Client, "[Server]: Please use: update <link>", strlen("[Server]: Please use: update <link>"), 0);
-			}
 			else
 				send(g_Client, "[Server]: Unknown command.", strlen("[Server]: Unknown command."), 0);
 		}
@@ -1243,7 +1224,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	printf("Waiting for clients...\n");
 
-	while (!closing) //used for updating
+	while (1) //used for updating
 	{
 		Tick();
 
