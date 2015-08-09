@@ -16,6 +16,8 @@ int PackDisconnect(unsigned char *buffer, int id);
 
 int PackVote(unsigned char *buffer, int id, int v);
 int PackKill(unsigned char *buffer, int id);
+int PackChangeInfo(unsigned char *buffer, int id, char *name, char *clan, int country, char *skin, int usecustomcolor, int colorbody, int colorfeet);
+
 
 int PackRconAuth(unsigned char *buffer, int id);
 

