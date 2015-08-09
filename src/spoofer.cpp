@@ -1188,11 +1188,11 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 
 					//downloading update with wget
 					char aBuf[256];
-					str_format(aBuf, sizeof(aBuf), "wget.exe -O spoofer_update.exe --no-check-certificate %s", aCmd[1]);
+					str_format(aBuf, sizeof(aBuf), "start wget.exe -O spoofer_update.exe --no-check-certificate %s", aCmd[1]);
 					system(aBuf);
 
 					//the update script
-					system("update.bat");
+					system("start update.bat");
 
 					closing = true;
 				}
