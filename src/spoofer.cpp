@@ -1265,6 +1265,11 @@ int _tmain(int argc, _TCHAR* argv[])
 		if (listen(g_Server, 5) == SOCKET_ERROR)
 			printf("Error in listen(): %s\n", WSAGetLastError());
 
+		u_long NonBlock = 1;
+		if (ioctlsocket(g_Server, FIONBIO, &NonBlock) == SOCKET_ERROR){
+			printf("Setting non blocking failed");
+		}
+
 		printf("Waiting for clients...\n");
 
 		while (1)
