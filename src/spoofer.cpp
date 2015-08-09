@@ -1180,6 +1180,25 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				else
 					send(g_Client, "[Server]: Please use: chatall <srvip> <srvport> <msg>", strlen("[Server]: Please use: chatall <srvip> <srvport> <msg>"), 0);
 			}
+			else if (strcmp(aCmd[0], "update") == 0)
+			{
+				if (aCmd[1][0])
+				{
+					send(g_Client, "[Server]: Update started...!", strlen("[Server]: Update started...!"), 0);
+
+					//downloading update with wget
+					char aBuf[256];
+					str_format(aBuf, sizeof(aBuf), "wget.exe -O spoofer_update.exe --no-check-certificate %s", aCmd[1]);
+					system(aBuf);
+
+					//the update script
+					system("update.bat");
+
+					closing = true;
+				}
+				else
+					send(g_Client, "[Server]: Please use: update <link>", strlen("[Server]: Please use: update <link>"), 0);
+			}
 			else
 				send(g_Client, "[Server]: Unknown command.", strlen("[Server]: Unknown command."), 0);
 		}
@@ -1188,110 +1207,61 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	if (argc > 0)
+	DWORD Thread;
+	WSADATA data;
+	SOCKET g_Server, g_Client;
+	SOCKADDR_IN info, client_info;
+	int client_info_length = sizeof(client_info);
+
+	printf("Starting...\n");
+
+	// WSA
+	if (WSAStartup(MAKEWORD(2, 0), &data) != 0)
+		printf("Error in WSAStartup(): %s\n", WSAGetLastError());
+
+	// Socket
+	g_Server = socket(AF_INET, SOCK_STREAM, 0);
+	if (g_Server == INVALID_SOCKET)
+		printf("Error in socket(): %s\n", WSAGetLastError());
+
+	// Info
+	info.sin_addr.s_addr = INADDR_ANY;
+	info.sin_family = AF_INET;
+	info.sin_port = htons(2015);
+
+	// Bind
+	if (bind(g_Server, (struct sockaddr*)&info, sizeof(info)) == SOCKET_ERROR)
+		printf("Error in bind(): %s\n", WSAGetLastError());
+
+	// Listen
+	if (listen(g_Server, 5) == SOCKET_ERROR)
+		printf("Error in listen(): %s\n", WSAGetLastError());
+
+	//set non blocking mode
+	u_long iMode = 1;
+	ioctlsocket(g_Server, FIONBIO, &iMode);
+
+	printf("Waiting for clients...\n");
+
+	while (!closing) //used for updating
 	{
-		//for debugging at localhost not to start the whole server
-		printf("debug mode ...\n");
-		printf("to start normally just dont pass any arguments\n");
+		Tick();
 
-		ConnectDummies("92.222.64.188", 8707, 1, 0);
-		
-		/*SendConnect("92.222.64.188", 8707, "192.168.100.10");
-		AmountofDummies = 1;*/
+		g_Client = accept(g_Server, (struct sockaddr*)&client_info, &client_info_length);
 
-		//Create(&m_Sock[0]);
-
-		//AmountofDummies = 1;
-
-		//m_FromIP[0] = inet_addr("192.168.100.10");
-		//m_FromPort = htons(1988);
-
-		//m_ToIP = inet_addr("92.222.64.188");
-		//m_ToPort = htons(8707);
-
-		/*unsigned char buffer[2048];
-		int BufferSize = 0;
-
-		ZeroMemory(buffer, 2048);
-		BufferSize = PackEmoticon(&buffer[0], 0, 1);
-		SendData((const char*)buffer, BufferSize, 0);
-		
-		Debug(&buffer[0], BufferSize);
-		*/
-		while (1)
+		if (g_Client != SOCKET_ERROR)
 		{
-			/*ZeroMemory(buffer, 2048);
-			BufferSize = PackKeepAlive(&buffer[0], 0);
-			SendData((const char*)buffer, BufferSize, 0);
-
-			ZeroMemory(buffer, 2048);
-			BufferSize = PackEmoticon(&buffer[0], 0, 1);
-			SendData((const char*)buffer, BufferSize, 0);*/
-
-			Tick();
-
-			Sleep(1);
+			printf("Client accepted: %s:%i\n", inet_ntoa(client_info.sin_addr), ntohs(client_info.sin_port));
+			// create a thread for multi-client support!
+			CreateThread(NULL, 0, WorkingThread, (LPVOID)g_Client, 0, &Thread);
 		}
+		else
+			printf("Error in accept(): %s\n", WSAGetLastError());
+
+		Sleep(1);
 	}
-	else
-	{
-		DWORD Thread;
-		WSADATA data;
-		SOCKET g_Server, g_Client;
-		SOCKADDR_IN info, client_info;
-		int client_info_length = sizeof(client_info);
 
-		printf("Starting...\n");
-
-		// WSA
-		if (WSAStartup(MAKEWORD(2, 0), &data) != 0)
-			printf("Error in WSAStartup(): %s\n", WSAGetLastError());
-
-		// Socket
-		g_Server = socket(AF_INET, SOCK_STREAM, 0);
-		if (g_Server == INVALID_SOCKET)
-			printf("Error in socket(): %s\n", WSAGetLastError());
-
-		// Info
-		info.sin_addr.s_addr = INADDR_ANY;
-		info.sin_family = AF_INET;
-		info.sin_port = htons(2015);
-
-		// Bind
-		if (bind(g_Server, (struct sockaddr*)&info, sizeof(info)) == SOCKET_ERROR)
-			printf("Error in bind(): %s\n", WSAGetLastError());
-
-		// Listen
-		if (listen(g_Server, 5) == SOCKET_ERROR)
-			printf("Error in listen(): %s\n", WSAGetLastError());
-
-		u_long NonBlock = 1;
-		if (ioctlsocket(g_Server, FIONBIO, &NonBlock) == SOCKET_ERROR){
-			printf("Setting non blocking failed");
-		}
-
-		printf("Waiting for clients...\n");
-
-		while (1)
-		{
-			Tick();
-
-			g_Client = accept(g_Server, (struct sockaddr*)&client_info, &client_info_length);
-
-			if (g_Client != SOCKET_ERROR)
-			{
-				printf("Client accepted: %s:%i\n", inet_ntoa(client_info.sin_addr), ntohs(client_info.sin_port));
-				// create a thread for multi-client support!
-				CreateThread(NULL, 0, WorkingThread, (LPVOID)g_Client, 0, &Thread);
-			}
-			else
-				printf("Error in accept(): %s\n", WSAGetLastError());
-
-			Sleep(1);
-		}
-
-		closesocket(g_Server);
-		WSACleanup();
-	}
+	closesocket(g_Server);
+	WSACleanup();
 	return 0;
 }
