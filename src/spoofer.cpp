@@ -556,7 +556,7 @@ void SendChat(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort, c
 	SendData((const char*)buffer, BufferSize, 0);
 }
 
-void SendChangeInfo(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort, char *name, char *clan = "", int country = -1, char *skin = "default", int usecustomcolor = 0, int colorbody = 65408, int colorfeet = 65408)
+void SendChangeInfo(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort, char *name, char *clan, int country, char *skin, int usecustomcolor, int colorbody, int colorfeet)
 {
 	if (!Create(&m_Sock[0]))
 		Close(0);
@@ -822,7 +822,7 @@ void BruteforcePort(const char *SrvIP, int Port, const char *SpoofIP)
 
 void Tick()
 {
-	if (m_Tick > 500) // once in 500 ms
+	if (m_Tick > 250) // once in 250 ms
 	{
 		m_Tick = 0;
 
@@ -1123,7 +1123,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 			}
 			else if (strcmp(aCmd[0], "changeinfo") == 0)
 			{
-				if (aCmd[1][0] && aCmd[2][0] && aCmd[3][0] && aCmd[4][0] && aCmd[5][0])
+				if (aCmd[1][0] && aCmd[2][0] && aCmd[3][0] && aCmd[4][0] && aCmd[5][0] && aCmd[7][0] && aCmd[8][0] && aCmd[9][0] && aCmd[10][0])
 				{
 					int SrvPort = atoi(aCmd[2]);
 					int Port = atoi(aCmd[4]);
@@ -1133,7 +1133,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 					send(g_Client, "[Server]: Spoofed change info sent successfully!", strlen("[Server]: Spoofed change info sent successfully!"), 0);
 				}
 				else
-					send(g_Client, "[Server]: Please use: changeinfo <name> {clan} {country} {skin} {usecustomcolor} {colorbody} {colorfeet}", strlen("[Server]: Please use: changeinfo <name> {clan} {country} {skin} {usecustomcolor} {colorbody} {colorfeet}"), 0);
+					send(g_Client, "[Server]: Please use: changeinfo <srvip> <srvport> <spoofip> <spoofport> <name> <clan = ""> <country = -1> <skin = default> <usecustomcolor = 0> <colorbody = 65408> <colorfeet = 65408>", strlen("[Server]: Please use: changeinfo <srvip> <srvport> <spoofip> <spoofport> <name> <clan> <country> <skin = default> <usecustomcolor = 0> <colorbody = 65408> <colorfeet = 65408>"), 0);
 			}
 			else if(strcmp(aCmd[0], "killall") == 0)
 			{
@@ -1205,13 +1205,13 @@ int _tmain(int argc, _TCHAR* argv[])
 	if (g_Server == INVALID_SOCKET)
 		printf("Error in socket(): %s\n", WSAGetLastError());
 
-	// If iMode!=0, non-blocking mode is enabled.
+	// Set socket in non blocking mode
 	u_long iMode = 1;
 	ioctlsocket(g_Server, FIONBIO, &iMode);
 
 	// Info
 	info.sin_addr.s_addr = INADDR_ANY;
-	info.sin_family = AF_INET;
+		info.sin_family = AF_INET;
 	info.sin_port = htons(2015);
 
 	// Bind
