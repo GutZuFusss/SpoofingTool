@@ -35,7 +35,11 @@ int AmountofDummies;
 int m_Tick; //used in tick as a timer
 
 char m_aMessage[MAX_MESSAGE];
-SOCKET m_Sock[64];
+
+SOCKET m_Sock; //socket for every other packet
+unsigned long m_FromIP;
+
+SOCKET m_SockDummies[64]; //sockets for dummies
 IN_ADDR m_Addr;
 SOCKADDR_IN m_Sin;
 
@@ -44,7 +48,7 @@ unsigned short m_ChecksumUDP;
 unsigned short m_FromPort;
 unsigned short m_ToPort;
 
-unsigned long m_FromIP[64];
+unsigned long m_FromIPDummies[64];
 unsigned long m_ToIP;
 
 unsigned int m_PayloadSize;
@@ -66,10 +70,16 @@ struct psd_udp {
 	UDP_HDR udp;
 };
 
+//using socket table with s
 void SendData(const char *pData, int Size, int s);
+
+//using one socket for every other packet
+void SendData(const char *pData, int Size);
+
 bool Create(SOCKET *pSock);
 void Output(char *pBuf);
 void Close();
+void Close(int id);
 USHORT checksum(USHORT *buffer, int size);
 
 void ConnectDummies(const char *IP, int Port, int Amount, int Vote);
