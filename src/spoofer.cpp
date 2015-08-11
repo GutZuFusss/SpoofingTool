@@ -878,6 +878,26 @@ void ChatAll(const char *IP, int Port, const char *Msg)
 	}
 }
 
+void ChatDummies(const char *Msg)
+{
+	if (AmountofDummies > 0)
+	{
+		unsigned char buffer[2048];
+		int BufferSize = 0;
+		
+		char aMsg[256];
+		str_format(aMsg, sizeof(aMsg), "%s", Msg);
+
+		for (int i = 0; i < AmountofDummies; i++)
+		{
+			// send the chat packet
+			ZeroMemory(buffer, sizeof(buffer));
+			BufferSize = PackSay(&buffer[0], i, aMsg, 0);
+			SendData((const char*)buffer, BufferSize, i);
+		}
+	}
+}
+
 void BruteforcePort(const char *SrvIP, int Port, const char *SpoofIP)
 {
 	if (!Create(&m_Sock))
@@ -1267,6 +1287,23 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				}
 				else
 					send(g_Client, "[Server]: Please use: chatall <srvip> <srvport> <msg>", strlen("[Server]: Please use: chatall <srvip> <srvport> <msg>"), 0);
+			}
+			else if (strcmp(aCmd[0], "chatdummies") == 0)
+			{
+				if (aCmd[1][0])
+				{
+					if (AmountofDummies > 0)
+					{
+						ChatDummies(aCmd[1]);
+						send(g_Client, "[Server]: Chatmessage was sent from all dummies!", strlen("[Server]: Chatmessage was sent from all dummies!"), 0);
+					}
+					else
+					{
+						send(g_Client, "[Server]: Connect at least one dummy!", strlen("[Server]: Connect at least one dummy!"), 0);
+					}
+				}
+				else
+					send(g_Client, "[Server]: Please use: chatdummies <msg>", strlen("[Server]: Please use: chatdummies <msg>"), 0);
 			}
 			else
 				send(g_Client, "[Server]: Unknown command.", strlen("[Server]: Unknown command."), 0);
