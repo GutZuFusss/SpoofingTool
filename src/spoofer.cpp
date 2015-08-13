@@ -1306,7 +1306,15 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				{
 					if (AmountofDummies > 0)
 					{
-						ChatDummies(aCmd[1]);
+						char aMsg[256];
+						ZeroMemory(&aMsg, sizeof(aMsg));
+						for(int i = 1; i <= Cmd; i++)
+						{
+							char aBuf[128];
+							str_format(aBuf, sizeof(aBuf), "%s ", aCmd[i]);
+							str_append(aMsg, aBuf, sizeof(aMsg));
+						}
+						ChatDummies(aMsg);
 						send(g_Client, "[Server]: Chatmessage was sent from all dummies!", strlen("[Server]: Chatmessage was sent from all dummies!"), 0);
 					}
 					else
