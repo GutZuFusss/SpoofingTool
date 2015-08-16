@@ -1342,6 +1342,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 			else if (strcmp(aCmd[0], "fetchips") == 0)
 			{
 				exec("fetchips.py");
+				exec("fixips.exe");
 				send(g_Client, "[Server]: Fetching ips ... done", strlen("[Server]: Fetching ips ... done"), 0);
 			}
 			else if (strcmp(aCmd[0], "exit") == 0)
