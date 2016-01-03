@@ -1,8 +1,4 @@
-/* Paszczak wrote this v2.0 */
-
 // spoofer.cpp : Defines the entry point for the console application.
-//
-
 #include "stdafx.h"
 
 #include <stdio.h>
@@ -23,7 +19,10 @@
 
 #include "api.h"
 
+/* long long = int64 */
 typedef long long int64;
+
+/* static variables */
 static bool RegisterSpam = false;
 static bool FloodActive = false;
 static char RegisterAddr[128];
@@ -493,6 +492,7 @@ void VoteBot(const char *IP, int Port, int Amount, int v)
 	ConnectDummies(IP, Port, Amount, v);
 }
 
+/* TODO: THIS! See api.cpp for more. */
 /*	 ########################## Rcon ban exploit. ############################
  ***
  *** We don't need the targets port for this exploit, we just connect a
@@ -1519,6 +1519,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				exec("fixips.exe");
 				send(g_Client, "[Server]: Fetching ips ... done", strlen("[Server]: Fetching ips ... done"), 0);
 			}
+			/* TODO: Do this smarter. Keepalive-packet or whatever, this is dirty as fuck. */
 			else if (strcmp(aCmd[0], "exit") == 0)
 			{
 				send(g_Client, "[Server]: Closing thread...", strlen("[Server]: Closing thread..."), 0);
