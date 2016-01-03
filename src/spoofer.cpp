@@ -655,8 +655,6 @@ void SendRcon(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort, c
 
 void SendChat(const char *SrvIP, int Port, const char *SpoofIP, int SpoofPort, const char *Msg)
 {
-	// ToDo: More than one word as Msg ._. --Note by Meskalin: This should not be done here, but where the command is received.
-
 	if (!Create(&m_Sock))
 		Close();
 
