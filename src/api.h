@@ -1,7 +1,7 @@
 #ifndef _API_H
 #define _API_H
 
-
+/* Packet-crafting functions */
 int PackSay(unsigned char *buffer, int id, char *message, int team);
 int PackSay(unsigned char *buffer, char *message, int team);
 
@@ -13,11 +13,11 @@ int PackEnterGame(unsigned char *buffer, int id);
 
 int PackKeepAlive(unsigned char *buffer, int id);
 
-int PackDisconnect(unsigned char *buffer);
 int PackDisconnect(unsigned char *buffer, int id);
+int PackDisconnect(unsigned char *buffer);
 
-int PackVote(unsigned char *buffer, int v);
 int PackVote(unsigned char *buffer, int id, int v);
+int PackVote(unsigned char *buffer, int v);
 
 int PackKill(unsigned char *buffer); 
 

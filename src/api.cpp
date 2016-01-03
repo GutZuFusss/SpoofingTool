@@ -11,6 +11,7 @@ enum
 {
 	PACKER_BUFFER_SIZE = 1024 * 4
 };
+
 unsigned char m_aBuffer[PACKER_BUFFER_SIZE];
 
 unsigned char *m_pCurrent;
@@ -23,6 +24,7 @@ int AckDummies[64];
 int Sequence;
 int Ack;
 
+/* Used to compress the packets */
 unsigned char* CompressionPack(unsigned char *pDst, int i)
 {
 	*pDst = (i >> 25) & 0x40; // set sign bit if i<0
@@ -48,6 +50,7 @@ unsigned char* CompressionPack(unsigned char *pDst, int i)
 	return pDst;
 }
 
+/* Resetting of the packer */
 void ResetPacker()
 {
 	m_Error = 0;
@@ -55,6 +58,7 @@ void ResetPacker()
 	m_pEnd = m_pCurrent + PACKER_BUFFER_SIZE;
 }
 
+/* Easier random numbers */
 int GetRand(int Start, int End)
 {
     int randnum = End + rand() / (RAND_MAX / (Start - End + 1) + 1);
@@ -62,6 +66,7 @@ int GetRand(int Start, int End)
     return randnum;
 }
 
+/* Append an integer to the packet */
 void AddInt(int i)
 {
 	if (m_Error)
@@ -76,6 +81,7 @@ void AddInt(int i)
 		m_pCurrent = CompressionPack(m_pCurrent, i);
 }
 
+/* Append a string to the packet */
 void AddString(const char *pStr, int Limit)
 {
 	if (m_Error)
@@ -113,9 +119,12 @@ void AddString(const char *pStr, int Limit)
 	}
 }
 
+/* Get the size of the packet we are currently building up */
 int Size() { return (int)(m_pCurrent - m_aBuffer); }
+/* Returns the buffer that contains the packet data */
 const unsigned char *Data() { return m_aBuffer; }
 
+/* enum with the IDs of the different package types */
 enum
 {
 	NETMSG_NULL = 0,
@@ -160,6 +169,7 @@ enum
 	NETMSG_RCON_CMD_REM,
 };
 
+/* Additional message types */
 enum
 {
 	NETMSG_INVALID = 0,
@@ -197,12 +207,14 @@ enum
 	NUM_NETMSGTYPES
 };
 
+/* VITAL and FLUSH flags, see teeworlds source to know when to use which flag */
 enum
 {
 	FLAGS_VITAL = 1,
 	FLAGS_FLUSH = 4
 };
 
+/* Some core control messages used to connect the dummies */
 enum
 {
 	NET_CTRLMSG_KEEPALIVE = 0,
@@ -210,25 +222,28 @@ enum
 	NET_CTRLMSG_CLOSE = 4
 };
 
+/* Couldn't get any of the stuff working with this going yet */
 enum
 {
 	NET_PACKETFLAG_CONTROL = 16,
 };
 
-unsigned char* PackHeader(unsigned char *pData, int m_Flags, int m_Size, int m_Sequence)
+/* Make the header of the packet ready to send, applies flags and more */
+unsigned char* PackHeader(unsigned char *pData, int fl /*flags*/, int si /*size*/, int sq /*sequence*/)
 {
-	pData[0] = ((m_Flags & 3) << 6) | ((m_Size >> 4) & 0x3f);
-	pData[1] = (m_Size & 0xf);
-	if (m_Flags&FLAGS_VITAL)
+	pData[0] = ((f & 3) << 6) | ((s >> 4) & 0x3f);
+	pData[1] = (s & 0xf);
+	if (f&FLAGS_VITAL)
 	{
-		pData[1] |= (m_Sequence >> 2) & 0xf0;
-		pData[2] = m_Sequence & 0xff;
+		pData[1] |= (sq >> 2) & 0xf0;
+		pData[2] = sq & 0xff;
 
 		return pData + 3;
 	}
 	return pData + 2;
 }
 
+/* Begin crafting our packet */
 int StartofPacking(unsigned char *buffer, int flags = FLAGS_FLUSH)
 {
 	int Flags = 0;
@@ -255,7 +270,7 @@ int StartofPacking(unsigned char *buffer, int flags = FLAGS_FLUSH)
 
 	BufferSize += 3;
 
-	//space for the header
+	// space for the header
 
 	if (flags == NET_PACKETFLAG_CONTROL)
 	{
@@ -278,6 +293,7 @@ int StartofPacking(unsigned char *buffer, int flags = FLAGS_FLUSH)
 	return BufferSize;
 }
 
+/* Another function to begin the crafting of the packet with an additional "id" parameter to use a specific socket*/
 int StartofPacking(int id, unsigned char *buffer, int flags = FLAGS_FLUSH)
 {
 	int Flags = 0;
@@ -327,6 +343,7 @@ int StartofPacking(int id, unsigned char *buffer, int flags = FLAGS_FLUSH)
 	return BufferSize;
 }
 
+/* Finalize the crafting of the packet */
 int EndofPacking(unsigned char *buffer, int buffersize, int flags, bool system = false)
 {
 	m_aBuffer[0] <<= 1; // shift the packet id
@@ -349,6 +366,7 @@ int EndofPacking(unsigned char *buffer, int buffersize, int flags, bool system =
 	return buffersize;
 }
 
+/* Also for finalizing the crafting of the packet, again with additional id parameter to define the socket to use*/
 int EndofPacking(unsigned char *buffer, int buffersize, int id, int flags, bool system = false)
 {
 	m_aBuffer[0] <<= 1; // shift the packet id
@@ -371,6 +389,7 @@ int EndofPacking(unsigned char *buffer, int buffersize, int id, int flags, bool 
 	return buffersize;
 }
 
+/* Craft a chatmessage (id) */
 int PackSay(unsigned char *buffer, int id, char *message, int team)
 {
 	int BufferSize = StartofPacking(id, buffer, FLAGS_FLUSH);
@@ -382,6 +401,7 @@ int PackSay(unsigned char *buffer, int id, char *message, int team)
 	return EndofPacking(buffer, BufferSize, id, FLAGS_FLUSH);
 }
 
+/* Craft a chatmessage */
 int PackSay(unsigned char *buffer, char *message, int team)
 {
 	int BufferSize = StartofPacking(buffer, FLAGS_FLUSH);
@@ -393,6 +413,7 @@ int PackSay(unsigned char *buffer, char *message, int team)
 	return EndofPacking(buffer, BufferSize, FLAGS_FLUSH);
 }
 
+/* Craft a connect packet */
 int PackConnect(unsigned char *buffer, int id)
 {
 	//memcpy((char *)buffer, "\x10\x00\x00\x01", 4);
@@ -407,6 +428,7 @@ int PackConnect(unsigned char *buffer, int id)
 	return BufferSize;
 }
 
+/* Craft a keep-alive packet */
 int PackKeepAlive(unsigned char *buffer, int id)
 {
 	int BufferSize = StartofPacking(id, buffer, NET_PACKETFLAG_CONTROL);
@@ -415,9 +437,10 @@ int PackKeepAlive(unsigned char *buffer, int id)
 
 	BufferSize++;
 
-	return 	BufferSize;
+	return BufferSize;
 }
 
+/* Craft a packet containing the client's info */
 int PackClientInfo(unsigned char *buffer, int id)
 {
 	int BufferSize = StartofPacking(id, buffer, FLAGS_VITAL | FLAGS_FLUSH);
@@ -433,6 +456,7 @@ int PackClientInfo(unsigned char *buffer, int id)
 	//return 40;
 }
 
+/* Craft a ready packet*/
 int PackReady(unsigned char *buffer, int id)
 {
 	int BufferSize = StartofPacking(id, buffer, FLAGS_VITAL | FLAGS_FLUSH);
@@ -446,6 +470,7 @@ int PackReady(unsigned char *buffer, int id)
 	//return 7;
 }
 
+/* Craft the enter-game packet */
 int PackEnterGame(unsigned char *buffer, int id)
 {
 	int BufferSize = StartofPacking(id, buffer, FLAGS_VITAL | FLAGS_FLUSH);
@@ -458,18 +483,19 @@ int PackEnterGame(unsigned char *buffer, int id)
 	//return 7;
 }
 
+/* Craft the send-info packet (change info of the dummies here) */
 int PackSendInfo(unsigned char *buffer, int id)
 {
 	int BufferSize = StartofPacking(id, buffer, FLAGS_VITAL | FLAGS_FLUSH);
 
 	AddInt(NETMSGTYPE_CL_STARTINFO);
-	AddString(pNames[id], -1);//nick
-	AddString("", -1);//clan
-	AddInt(-1);//country
-	AddString(pSkins[rand()%15], -1);//skin
-	AddInt(0);//use default colors
-	AddInt(65048);//body
-	AddInt(65048);//feet
+	AddString(pNames[id], -1);// nick
+	AddString("69", -1);// clan
+	AddInt(-1);// country
+	AddString(pSkins[rand()%15], -1);// skin
+	AddInt(0);// use default colors
+	AddInt(65048);// body
+	AddInt(65048);// feet
 
 	return EndofPacking(buffer, BufferSize, id, FLAGS_VITAL | FLAGS_FLUSH);
 
@@ -477,6 +503,7 @@ int PackSendInfo(unsigned char *buffer, int id)
 	//return 68;
 }
 
+/* Craft the disconnect packet (id) */
 int PackDisconnect(unsigned char *buffer, int id)
 {
 	int BufferSize = StartofPacking(id, buffer, NET_PACKETFLAG_CONTROL);
@@ -488,6 +515,7 @@ int PackDisconnect(unsigned char *buffer, int id)
 	return BufferSize;
 }
 
+/* Craft the disconnect packet */
 int PackDisconnect(unsigned char *buffer)
 {
 	int BufferSize = StartofPacking(buffer, NET_PACKETFLAG_CONTROL);
@@ -499,6 +527,7 @@ int PackDisconnect(unsigned char *buffer)
 	return BufferSize;
 }
 
+/* Craft the voting packet (id) */
 int PackVote(unsigned char *buffer, int id, int v)
 {
 	int BufferSize = StartofPacking(id, buffer, FLAGS_FLUSH);
@@ -508,6 +537,7 @@ int PackVote(unsigned char *buffer, int id, int v)
 	return EndofPacking(buffer, BufferSize, id, FLAGS_FLUSH);
 }
 
+/* Craft the voting packet */
 int PackVote(unsigned char *buffer, int v)
 {
 	int BufferSize = StartofPacking(buffer, FLAGS_FLUSH);
@@ -517,14 +547,7 @@ int PackVote(unsigned char *buffer, int v)
 	return EndofPacking(buffer, BufferSize, FLAGS_FLUSH);
 }
 
-int PackKill(unsigned char *buffer)
-{
-	int BufferSize = StartofPacking(buffer, FLAGS_FLUSH);
-
-	AddInt(NETMSGTYPE_CL_KILL);
-	return EndofPacking(buffer, BufferSize, FLAGS_FLUSH);
-}
-
+/* Craft the kill packet (id) */
 int PackKill(unsigned char *buffer, int id)
 {
 	int BufferSize = StartofPacking(id, buffer, FLAGS_FLUSH);
@@ -533,6 +556,16 @@ int PackKill(unsigned char *buffer, int id)
 	return EndofPacking(buffer, BufferSize, id, FLAGS_FLUSH);
 }
 
+/* Craft the kill packet */
+int PackKill(unsigned char *buffer)
+{
+	int BufferSize = StartofPacking(buffer, FLAGS_FLUSH);
+
+	AddInt(NETMSGTYPE_CL_KILL);
+	return EndofPacking(buffer, BufferSize, FLAGS_FLUSH);
+}
+
+/* TODO: Get this working (great for banning people) */
 int PackRconAuth(unsigned char *buffer)
 {
 	/*int BufferSize = StartofPacking(buffer, id, FLAGS_FLUSH);
@@ -546,6 +579,7 @@ int PackRconAuth(unsigned char *buffer)
 	return 12;
 }
 
+/* Craft the packet containing a rcon line */
 int PackRcon(unsigned char *buffer, const char *pCmd)
 {
 	int BufferSize = StartofPacking(buffer, FLAGS_VITAL);
@@ -555,7 +589,7 @@ int PackRcon(unsigned char *buffer, const char *pCmd)
 	return EndofPacking(buffer, BufferSize, FLAGS_VITAL);
 }
 
-
+/* Crafts the emoticon packet (id) */
 int PackEmoticon(unsigned char *buffer, int id, int e)
 {
 	int BufferSize = StartofPacking(id, buffer, FLAGS_FLUSH);
@@ -565,6 +599,7 @@ int PackEmoticon(unsigned char *buffer, int id, int e)
 	return EndofPacking(buffer, BufferSize, id, FLAGS_FLUSH);
 }
 
+/* Crafts the emoticon packet */
 int PackEmoticon(unsigned char *buffer, int e)
 {
 	int BufferSize = StartofPacking(buffer, FLAGS_FLUSH);
@@ -574,6 +609,7 @@ int PackEmoticon(unsigned char *buffer, int e)
 	return EndofPacking(buffer, BufferSize, FLAGS_FLUSH);
 }
 
+/* Craft the change-info packet */
 int PackChangeInfo(unsigned char *buffer, char *name, char *clan, int country, char *skin, int usecustomcolor, int colorbody, int colorfeet)
 {
 	int BufferSize = StartofPacking(buffer, FLAGS_VITAL);
@@ -590,6 +626,7 @@ int PackChangeInfo(unsigned char *buffer, char *name, char *clan, int country, c
 	return EndofPacking(buffer, BufferSize, FLAGS_VITAL);
 }
 
+/* Reset a dummy (id) */
 void Reset(int id)
 {
 	SequenceDummies[id] = 0;
@@ -597,6 +634,7 @@ void Reset(int id)
 	ResetPacker();
 }
 
+/* The complete packer, inluding the ack and the seq */
 void Reset()
 {
 	Sequence = 0;

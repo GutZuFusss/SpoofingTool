@@ -1,6 +1,7 @@
 #ifndef _DUMMYDATA_H
 #define _DUMMYDATA_H
 
+/* Infos the dummies should use */
 const char *pNames[] = {
 					"Zeus",
 					"Poseidon",
