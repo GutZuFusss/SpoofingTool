@@ -231,9 +231,9 @@ enum
 /* Make the header of the packet ready to send, applies flags and more */
 unsigned char* PackHeader(unsigned char *pData, int fl /*flags*/, int si /*size*/, int sq /*sequence*/)
 {
-	pData[0] = ((f & 3) << 6) | ((s >> 4) & 0x3f);
-	pData[1] = (s & 0xf);
-	if (f&FLAGS_VITAL)
+	pData[0] = ((fl & 3) << 6) | ((si >> 4) & 0x3f);
+	pData[1] = (si & 0xf);
+	if (fl & FLAGS_VITAL)
 	{
 		pData[1] |= (sq >> 2) & 0xf0;
 		pData[2] = sq & 0xff;
