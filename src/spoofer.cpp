@@ -1010,7 +1010,7 @@ void Tick()
 				char aFinalMsg[32];
 				int MsgLen = (rand()%3)+4;
 				for(int j = 0; j < MsgLen; j++)
-					aMessage[i] = 'a'+(rand()%('z'-'a'));
+					aMessage[j] = 'a'+(rand()%('z'-'a'));
 				aMessage[MsgLen] = 0;
 				str_format(aFinalMsg, sizeof(aFinalMsg), "/register %s %s", aMessage, aMessage);
 					
