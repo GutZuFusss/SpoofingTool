@@ -1,7 +1,7 @@
 import urllib2
 import time
 
-response = urllib2.urlopen("https://stats.teeworlds.tw/last_refreshes.php?time=60")
+response = urllib2.urlopen("http://dev.fruchtihd.de/stats.php?time=3600")
 page_source = response.read()
 
 f = open("ips.txt","w")
