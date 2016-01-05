@@ -8,7 +8,7 @@
 #include <iostream>
 using namespace std;
 
-#define SERVER_IP "78.31.64.155"
+#define SERVER_IP "62.141.46.191"
 #define SERVER_PORT 2015
 
 int _tmain(int argc, _TCHAR* argv[])
