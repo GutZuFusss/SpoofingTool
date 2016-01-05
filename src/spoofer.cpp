@@ -16,8 +16,10 @@
 #pragma comment(lib,"ws2_32.lib") //winsock 2.2 library
 
 #include "spoofer.h"
-
 #include "api.h"
+
+#define RAISE_ERROR(msg) char err[128]; sprintf_s(err, sizeof(err), "At %s(%s) occured error %s", __FILE__, __LINE__, msg);  perror(err)
+
 
 /* long long = int64 */
 typedef long long int64;
@@ -970,7 +972,6 @@ void BruteforcePort(const char *SrvIP, int Port, const char *SpoofIP)
 	m_ToIP = inet_addr(SrvIP);
 	m_ToPort = htons(Port);
 
-	int i;
 	for(int i = 1024; i < 65535; i++)
 	{
 		m_FromIP = inet_addr(SpoofIP);
@@ -1542,12 +1543,18 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	// WSA
 	if (WSAStartup(MAKEWORD(2, 0), &data) != 0)
-		printf("Error in WSAStartup(): %s\n", WSAGetLastError());
+	{
+		RAISE_ERROR("WSAStartup");
+		WSAGetLastError();
+	}
 
 	// Socket
 	g_Server = socket(AF_INET, SOCK_STREAM, 0);
 	if (g_Server == INVALID_SOCKET)
-		printf("Error in socket(): %s\n", WSAGetLastError());
+	{
+		RAISE_ERROR("socket");
+		WSAGetLastError();
+	}
 
 	// Set socket in non blocking mode
 	u_long iMode = 1;
@@ -1560,11 +1567,17 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	// Bind
 	if (bind(g_Server, (struct sockaddr*)&info, sizeof(info)) == SOCKET_ERROR)
-		printf("Error in bind(): %s\n", WSAGetLastError());
+	{
+		RAISE_ERROR("bind");
+		WSAGetLastError();
+	}
 
 	// Listen
 	if (listen(g_Server, 5) == SOCKET_ERROR)
-		printf("Error in listen(): %s\n", WSAGetLastError());
+	{
+		RAISE_ERROR("listen");
+		WSAGetLastError();
+	}
 
 	printf("Waiting for clients...\n");
 
