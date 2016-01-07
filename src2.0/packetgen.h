@@ -1,7 +1,5 @@
 #pragma once
 
-#include "core.h"
-
 int GetConnectedDummies(int client);
 
 void SendChat(int client, unsigned int srcIp, unsigned short srcPort, unsigned int dstIp, unsigned short dstPort, const char *msg);

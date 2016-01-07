@@ -1,9 +1,15 @@
 #pragma once
 
-#include "winsock2.h"
-#include "ws2tcpip.h" //IP_HDRINCL is here
+void Output(char *pBuf);
 
-#pragma comment(lib,"ws2_32.lib") //winsock 2.2 library
+const char *GenerateIP();
+void exec(char* cmd);
+
+
+
+
+
+
 
 
 
@@ -21,12 +27,3 @@
 
 
 
-void Output(char *pBuf);
-
-bool Create(SOCKET *pSock);
-void Close(SOCKET sock);
-
-void send(SOCKET s, char *text);
-
-const char *GenerateIP();
-void exec(char* cmd);

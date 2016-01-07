@@ -19,7 +19,7 @@
 
 #include "packetgen.h"
 #include "core.h"
-
+#include "networking.h"
 
 struct Client
 {
