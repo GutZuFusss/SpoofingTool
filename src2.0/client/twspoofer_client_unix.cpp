@@ -1,14 +1,11 @@
 #include <iostream>      //cout
-#include <stdio.h>       //printf
-#include <stdlib.h>
-#include <string.h>      //strlen
-#include <string>        //string
-#include <unistd.h>
-#include <sys/socket.h>  //socket
-#include <arpa/inet.h>   //inet_addr
-#include <netdb.h>       //hostent
-#include <pthread.h>     // threading,  "-lpthread" nicht vergessen!!
-#include <signal.h>      // ctrl-c
+#include <stdio.h>       // printf, perror
+#include <stdlib.h>      // atoi, exit
+#include <string.h>      // strlen
+#include <unistd.h>      // sleep, close
+#include <arpa/inet.h>   // inet_addr
+#include <pthread.h>     // thread_create, compile with "-lpthread"!
+#include <signal.h>      // for ctrl-c
 
 using namespace std;
 
@@ -66,7 +63,10 @@ int main(int argc, char* argv[])
 	// Socket
 	g_Socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (g_Socket == -1)
+	{
 		perror("Error while creating socket");
+		return 1;
+	}
 
 	// Info
 	info.sin_addr.s_addr = inet_addr(SERVER_IP);
@@ -75,7 +75,10 @@ int main(int argc, char* argv[])
 
 	// Connect
 	if (connect(g_Socket, (struct sockaddr*)&info, sizeof(info)) < 0)
-		perror("Error in connect()");
+	{
+		perror("Error while connecting");
+		return 1;
+	}
 
 	cout << "[Client]: Connected to server..." << endl;
 
@@ -99,7 +102,7 @@ int main(int argc, char* argv[])
 				cout << rBuffer << endl;
 			}
 			else
-				perror("Error in recv()");
+				perror("Error while receiving");
 
 		cmd:
 			cout << ">> ";
@@ -109,7 +112,7 @@ int main(int argc, char* argv[])
 				goto cmd;
 
 			if (send(g_Socket, sBuffer, strlen(sBuffer), 0) < 0)
-				perror("Error in send()");
+				perror("Error while sending");
 		}
 	}
 	else
