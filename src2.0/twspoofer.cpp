@@ -110,7 +110,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				Char++;
 			}
 
-			if (strcmp(aCmd[0], "keepalive") == 0) // keep alive
+			if (strcmp(aCmd[0], "keepalive") == 0 || strcmp(aCmd[0], "\x16") == 0) // keep alive
 			{
 				if (aCmd[1][0])
 				{
@@ -118,7 +118,10 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 					if (id > MAX_CLIENTS || id < 0)
 						send(g_Client, "[Server]: Invalid client's id.");
 					else
+					{
+						send(g_Client, "\x16"); // send back to the client
 						clients[id].lastAck = TIMEOUT_SEC;
+					}
 				}
 				else
 					send(g_Client, "[Server]: Id not found.");
@@ -278,7 +281,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 			else if (strcmp(aCmd[0], "exit") == 0)
 			{
 				//send(g_Client, "[Server]: Closing thread... Goodbye!");
-				send(g_Client, "\x06\x04");
+				send(g_Client, "\x04\x06");
 				printf("Client #%i disconnected\n");
 				Drop(client);
 			}
