@@ -23,19 +23,13 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 
 	int clientid = tp.clientid;
 	SOCKET s = tp.socket;
-	int t = 0;
-	char aBuf[32];
+	char aBuf[5];
 
-	while (1) //every 1 sec
-	{ 
-		if (t > 30)
-		{
-			t = 0;
-			sprintf_s(aBuf, sizeof(aBuf), "keepalive %d", clientid);
-			send(s, aBuf, sizeof(aBuf), 0);
-		}
-		t++;
-		Sleep(1000);
+	while (1) //every 15 sec
+	{
+		sprintf_s(aBuf, sizeof(aBuf), "\x16 %d", clientid);
+		send(s, aBuf, sizeof(aBuf), 0);
+		Sleep(15000);
 	}
 }
 
@@ -85,7 +79,23 @@ int _tmain(int argc, _TCHAR* argv[])
 
 			if (recv(g_Socket, rBuffer, sizeof(rBuffer), 0) != SOCKET_ERROR)
 			{
-				cout << rBuffer << endl;
+				if(rBuffer[0] == '\x04')
+				{
+					cout << "End of transmission: ";
+					if(rBuffer[1] == '\x06')
+					{
+						cout << "Disconneted from server." << endl; // maybe leave these message to the server?
+						break;
+					}
+					else if(rBuffer[1] == '\x15')
+					{
+						cout << "Ack timeout." << endl;
+						break;
+					}
+					else cout << "No reason given." << endl;
+				}
+				else
+					cout << rBuffer << endl;
 			}
 			else
 				cout << "Error in recv(): " << WSAGetLastError() << endl;

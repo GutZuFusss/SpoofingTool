@@ -36,19 +36,13 @@ void *WorkingThread(void *pParam)
 
 	int clientid = tp.clientid;
 	int s = tp.socket;
-	int t = 0;
-	char aBuf[32];
+	char aBuf[5];
 
-	while (1) //every 1 sec
-	{ 
-		if (t > 30)
-		{
-			t = 0;
-			snprintf(aBuf, sizeof(aBuf), "keepalive %d", clientid);
-			send(s, aBuf, sizeof(aBuf), 0);
-		}
-		t++;
-		sleep(1000);
+	while (1) //every 15 sec
+	{
+		sprintf_s(aBuf, sizeof(aBuf), "\x16 %d", clientid);
+		send(s, aBuf, sizeof(aBuf), 0);
+		Sleep(15000);
 	}
 }
 
@@ -99,7 +93,23 @@ int main(int argc, char* argv[])
 
 			if (recv(g_Socket, rBuffer, sizeof(rBuffer), 0) > 0)
 			{
-				cout << rBuffer << endl;
+				if(rBuffer[0] == '\x04')
+				{
+					cout << "End of transmission: ";
+					if(rBuffer[1] == '\x06')
+					{
+						cout << "Disconneted from server." << endl; // maybe leave these message to the server?
+						break;
+					}
+					else if(rBuffer[1] == '\x15')
+					{
+						cout << "Ack timeout." << endl;
+						break;
+					}
+					else cout << "No reason given." << endl;
+				}
+				else
+					cout << rBuffer << endl;
 			}
 			else
 				perror("Error while receiving");
