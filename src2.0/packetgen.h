@@ -6,7 +6,7 @@ void SendChat(int client, unsigned int srcIp, unsigned short srcPort, unsigned i
 void SendKill(int client, unsigned int srcIp, unsigned short srcPort, unsigned int dstIp, unsigned short dstPort);
 void SendDisconnect(int client, unsigned int srcIp, unsigned short srcPort, unsigned int dstIp, unsigned short dstPort);
 
-void SendConnectDummies(int client, unsigned int dstIp, unsigned short dstPort, int amount);
+void SendConnectDummies(int client, unsigned int dstIp, unsigned short dstPort, int amount, int vote);
 void SendDisconnectDummies(int client);
 void SendChatDummies(int client, const char *msg);
 void SendKeepAliveDummies(int client);
