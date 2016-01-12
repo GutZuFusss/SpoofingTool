@@ -185,11 +185,11 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 					{
 						if (GetConnectedDummies(client) == 0)
 						{
-							SendConnectDummies(client, inet_addr(aCmd[1]), htons(atoi(aCmd[2])), number);
+							SendConnectDummies(client, inet_addr(aCmd[1]), htons(atoi(aCmd[2])), number, 0);
 							send(g_Client, "[Server]: Dummies connected!");
 						}
 						else
-							send(g_Client, "[Server]: Disconnect current dummies.");
+							send(g_Client, "[Server]: Disconnect active dummies first.");
 					}
 					else
 					{
@@ -232,6 +232,32 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				}
 				else
 					send(g_Client, "[Server]: Please use: chatdummies <msg>");
+			}
+			else if (strcmp(aCmd[0], "votebot") == 0 || strcmp(aCmd[0], "vb") == 0)
+			{
+				if (aCmd[1][0] && aCmd[2][0] && aCmd[3][0] && aCmd[4][0])
+				{
+					int number = atoi(aCmd[3]);
+					int vote = atoi(aCmd[4]);
+					if (number > 0 && number <= MAX_DUMMIES_PER_CLIENT)
+					{
+						if (GetConnectedDummies(client) == 0)
+						{
+							SendConnectDummies(client, inet_addr(aCmd[1]), htons(atoi(aCmd[2])), number, vote);
+							send(g_Client, "[Server]: Dummies connected (voting...)!");
+						}
+						else
+							send(g_Client, "[Server]: Disconnect active dummies first.");
+					}
+					else
+					{
+						char aBuf[64];
+						sprintf_s(aBuf, sizeof(aBuf), "[Server]: Please select a amount between 1 and %s!", MAX_DUMMIES_PER_CLIENT);
+						send(g_Client, aBuf);
+					}
+				}
+				else
+					send(g_Client, "[Server]: Please use: votebot <dstIp> <dstPort> <amount> <vote>);
 			}
 			else if (strcmp(aCmd[0], "ipspam") == 0)
 			{

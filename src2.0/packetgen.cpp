@@ -63,7 +63,7 @@ void SendDisconnect(int client, unsigned int srcIp, unsigned short srcPort, unsi
 	SendData(client, srcIp, srcPort, dstIp, dstPort, (const char*)buffer, bufferSize);
 }
 
-void SendConnectDummies(int client, unsigned int dstIp, unsigned short dstPort, int amount)
+void SendConnectDummies(int client, unsigned int dstIp, unsigned short dstPort, int amount, int vote)
 {
 	for (int i = 0; i < amount; i++) //generate random ips
 		ipDummies[client][i] = inet_addr(GenerateIP());
@@ -109,6 +109,14 @@ void SendConnectDummies(int client, unsigned int dstIp, unsigned short dstPort, 
 		memset(buffer, 0, BUFLEN);
 		bufferSize = PackKeepAlive_d(client, i, &buffer[0]);
 		SendData(client, i, ipDummies[client][i], srcPort, dstIp, dstPort, (const char*)buffer, bufferSize);
+	
+		// vote if wanted
+		if(vote != 0)
+		{
+			memset(buffer, 0, BUFLEN);
+			bufferSize = PackVote_d(client, j, &buffer[0], vote);
+			SendData(client, i, ipDummies[client][i], srcPort, dstIp, dstPort, (const char*)buffer, bufferSize);
+		}
 	}
 }
 
