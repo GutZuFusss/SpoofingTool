@@ -63,6 +63,18 @@ void SendDisconnect(int client, unsigned int srcIp, unsigned short srcPort, unsi
 	SendData(client, srcIp, srcPort, dstIp, dstPort, (const char*)buffer, bufferSize);
 }
 
+void SendVote(int client, unsigned int srcIp, unsigned short srcPort, unsigned int dstIp, unsigned short dstPort, int v)
+{
+	if (!CreateSocket(client))
+		CloseSocket(client);
+
+	Reset(client);
+	memset(buffer, 0, BUFLEN);
+
+	int bufferSize = PackVote(client, &buffer[0], v);
+	SendData(client, srcIp, srcPort, dstIp, dstPort, (const char*)buffer, bufferSize);
+}
+
 void SendConnectDummies(int client, unsigned int dstIp, unsigned short dstPort, int amount, int vote)
 {
 	for (int i = 0; i < amount; i++) //generate random ips
@@ -211,6 +223,41 @@ void SendListIpAll(int client, unsigned int dstIp, unsigned short dstPort)
 			Char++;
 		}
 		SendChat(client, inet_addr(aSplit[0]), htons(atoi(aSplit[1])), dstIp, dstPort, Line.c_str());
+	}
+}
+
+void SendVoteAll(int client, unsigned int dstIp, unsigned short dstPort, int vote)
+{
+	std::ifstream File("ips.txt");
+	if (!File)
+	{
+		printf("Failed to open ips.txt\n");
+		return;
+	}
+
+	// loop through the file
+	std::string Line;
+	while (std::getline(File, Line))
+	{
+		char aSplit[512][256] = { { 0 } };
+		memset(&aSplit, 0, sizeof(aSplit));
+		int Split = 0;
+		int Char = 0;
+
+		// split the string
+		for (unsigned int i = 0; i < strlen(Line.c_str()); i++)
+		{
+			if (Line.c_str()[i] == ':')
+			{
+				Split++;
+				Char = 0;
+				continue;
+			}
+
+			aSplit[Split][Char] = Line.c_str()[i];
+			Char++;
+		}
+		SendVote(client, inet_addr(aSplit[0]), htons(atoi(aSplit[1])), dstIp, dstPort, vote);
 	}
 }
 
