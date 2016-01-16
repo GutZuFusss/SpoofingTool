@@ -26,12 +26,13 @@ struct Client
 	HANDLE handle;
 	SOCKET socket;
 	int lastAck;
-	int dummieSpam = -1;
+	int dummieSpam;
 	char dummiesIP[64];
 	int dummiesPort;
 };
 
 Client clients[MAX_CLIENTS];
+bool restart = false; // setting this to true will instantly restart the zervor
 
 void Drop(int client)
 {
@@ -76,7 +77,7 @@ void Update()
 	{
 		if (clients[i].lastAck != 0) //if client's online
 		{
-			if(clients[i].dummieSpam != -1)
+			if(clients[i].dummieSpam > 0)
 			{
 				// fuck 100ms right here, noone fucking cares man.
 				Sleep(50);
@@ -158,12 +159,9 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 			{
 				if (aCmd[1][0] && aCmd[2][0] && aCmd[3][0] && aCmd[4][0] && aCmd[5][0])
 				{
-					char aMsg[256];
-					memset(&aMsg, 0, sizeof(aMsg));
+					char aMsg[256] = {0};
 					for (int i = 5; i <= Cmd; i++)
-					{
 						sprintf_s(aMsg, sizeof(aMsg), "%s %s", aMsg, aCmd[i]);
-					}
 
 					SendChat(client, inet_addr(aCmd[1]), htons(atoi(aCmd[2])), inet_addr(aCmd[3]), htons(atoi(aCmd[4])), aMsg);
 
@@ -211,8 +209,8 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 					}
 					else
 					{
-						char aBuf[64];
-						sprintf_s(aBuf, sizeof(aBuf), "[Server]: Please select a amount between 1 and %s!", MAX_DUMMIES_PER_CLIENT);
+						char aBuf[64] = {0};
+						sprintf_s(aBuf, sizeof(aBuf), "[Server]: Please select a amount between 1 and %i!", MAX_DUMMIES_PER_CLIENT);
 						send(g_Client, aBuf);
 					}
 				}
@@ -233,8 +231,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 			{
 				if (aCmd[1][0])
 				{
-					char aMsg[256];
-					memset(&aMsg, 0, sizeof(aMsg));
+					char aMsg[256] = {0};
 					for (int i = 1; i <= Cmd; i++)
 					{
 						sprintf_s(aMsg, sizeof(aMsg), "%s %s", aMsg, aCmd[i]);
@@ -251,7 +248,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				else
 					send(g_Client, "[Server]: Please use: chatdummies <msg>");
 			}
-			else if (strcmp(aCmd[0], "dummiesspam") == 0 || strcmp(aCmd[0], "ds") == 0)
+			else if (strcmp(aCmd[0], "dummyspam") == 0 || strcmp(aCmd[0], "ds") == 0)
 			{
 				if (aCmd[1][0] && aCmd[2][0] && aCmd[3][0])
 				{
@@ -265,12 +262,12 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 								clients[client].dummieSpam = number;
 								sprintf_s(clients[client].dummiesIP, sizeof(clients[client].dummiesIP), aCmd[1]);
 								clients[client].dummiesPort = atoi(aCmd[2]);
-								send(g_Client, "[Server]: Dummies spam started!");
+								send(g_Client, "[Server]: Dummyspam started!");
 							}
 							else
 							{
-								clients[client].dummieSpam = -1;
-								send(g_Client, "[Server]: Dummies spam stopped!");
+								clients[client].dummieSpam = 0;
+								send(g_Client, "[Server]: Dummyspam stopped!");
 							}
 						}
 						else
@@ -278,8 +275,8 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 					}
 					else
 					{
-						char aBuf[64];
-						sprintf_s(aBuf, sizeof(aBuf), "[Server]: Please select a amount between 1 and %s!", MAX_DUMMIES_PER_CLIENT);
+						char aBuf[64] = {0};
+						sprintf_s(aBuf, sizeof(aBuf), "[Server]: Please select a amount between 1 and %i!", MAX_DUMMIES_PER_CLIENT);
 						send(g_Client, aBuf);
 					}
 				}
@@ -304,8 +301,8 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 					}
 					else
 					{
-						char aBuf[64];
-						sprintf_s(aBuf, sizeof(aBuf), "[Server]: Please select a amount between 1 and %s!", MAX_DUMMIES_PER_CLIENT);
+						char aBuf[64] = {0};
+						sprintf_s(aBuf, sizeof(aBuf), "[Server]: Please select a amount between 1 and %i!", MAX_DUMMIES_PER_CLIENT);
 						send(g_Client, aBuf);
 					}
 				}
@@ -356,7 +353,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 			{
 				if (aCmd[1][0] && aCmd[2][0] && aCmd[3][0])
 				{
-					char aMsg[256];
+					char aMsg[256] = {0};
 					for (int i = 3; i <= Cmd; i++)
 					{
 						sprintf_s(aMsg, sizeof(aMsg), "%s %s", aMsg, aCmd[i]);
@@ -389,7 +386,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	SOCKADDR_IN info, client_info;
 	int client_info_length = sizeof(client_info);
 	int clientCount = 0;
-	char aBuf[32];
+	char aBuf[32] = {0};
 
 	printf("Starting...\n");
 
