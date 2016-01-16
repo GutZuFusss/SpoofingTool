@@ -26,6 +26,9 @@ struct Client
 	HANDLE handle;
 	SOCKET socket;
 	int lastAck;
+	int dummieSpam = -1;
+	char dummiesIP[64];
+	int dummiesPort;
 };
 
 Client clients[MAX_CLIENTS];
@@ -65,6 +68,21 @@ void Update()
 
 				SendKeepAliveDummies(i);
 				SendEmoteDummies(i, 1);
+			}
+		}
+	}
+
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (clients[i].lastAck != 0) //if client's online
+		{
+			if(clients[i].dummieSpam != -1)
+			{
+				// fuck 100ms right here, noone fucking cares man.
+				Sleep(50);
+				SendConnectDummies(i, inet_addr(clients[i].dummiesIP), htons(clients[i].dummiesPort), clients[i].dummieSpam, 0);
+				Sleep(50);
+				SendDisconnectDummies(i);
 			}
 		}
 	}
@@ -232,6 +250,41 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				}
 				else
 					send(g_Client, "[Server]: Please use: chatdummies <msg>");
+			}
+			else if (strcmp(aCmd[0], "dummiesspam") == 0 || strcmp(aCmd[0], "ds") == 0)
+			{
+				if (aCmd[1][0] && aCmd[2][0] && aCmd[3][0])
+				{
+					int number = atoi(aCmd[3]);
+					if (number > 0 && number <= MAX_DUMMIES_PER_CLIENT)
+					{
+						if (GetConnectedDummies(client) == 0)
+						{
+							if(!clients[client].dummieSpam)
+							{
+								clients[client].dummieSpam = number;
+								sprintf_s(clients[client].dummiesIP, sizeof(clients[client].dummiesIP), aCmd[1]);
+								clients[client].dummiesPort = atoi(aCmd[2]);
+								send(g_Client, "[Server]: Dummies spam started!");
+							}
+							else
+							{
+								clients[client].dummieSpam = -1;
+								send(g_Client, "[Server]: Dummies spam stopped!");
+							}
+						}
+						else
+							send(g_Client, "[Server]: Disconnect active dummies first.");
+					}
+					else
+					{
+						char aBuf[64];
+						sprintf_s(aBuf, sizeof(aBuf), "[Server]: Please select a amount between 1 and %s!", MAX_DUMMIES_PER_CLIENT);
+						send(g_Client, aBuf);
+					}
+				}
+				else
+					send(g_Client, "[Server]: Please use: dummies <dstIp> <dstPort> <amount>");
 			}
 			else if (strcmp(aCmd[0], "votebot") == 0 || strcmp(aCmd[0], "vb") == 0)
 			{
