@@ -44,6 +44,9 @@ void Drop(int client)
 
 void Update()
 {
+	if(restart)
+		return;
+
 	static time_t t = time(NULL);
 
 	if (time(NULL) >= t + 1) //1 sec
@@ -80,9 +83,9 @@ void Update()
 			if(clients[i].dummieSpam > 0)
 			{
 				// fuck 100ms right here, noone fucking cares man.
-				Sleep(50);
+				//Sleep(25);
 				SendConnectDummies(i, inet_addr(clients[i].dummiesIP), htons(clients[i].dummiesPort), clients[i].dummieSpam, 0);
-				Sleep(50);
+				Sleep(25);
 				SendDisconnectDummies(i);
 			}
 		}
@@ -144,6 +147,11 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				}
 				else
 					send(g_Client, "[Server]: Id not found.");
+			}
+			else if (strcmp(aCmd[0], "restart") == 0) // keep alive
+			{
+				restart = true;
+				send(g_Client, "[Server]: Restarting!");
 			}
 			else if (strcmp(aCmd[0], "status") == 0) // status
 			{
@@ -450,6 +458,9 @@ inf:
 	while (1) //used for updating
 	{
 		Update();
+
+		if(restart)
+			break;
 
 		g_Client = accept(g_Server, (struct sockaddr*)&client_info, &client_info_length);
 
