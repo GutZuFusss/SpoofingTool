@@ -6,6 +6,7 @@
 #pragma comment(lib,"ws2_32.lib") //winsock 2.2 library
 
 #include "core.h"
+#include "client.h"
 #include "networking.h"
 
 #define MAX_PACKET 4096
@@ -44,11 +45,9 @@ struct psd_udp {
 	UDP_HDR udp;
 };
 
-SOCKET sock[MAX_CLIENTS];
-SOCKET sockDummies[MAX_CLIENTS][MAX_DUMMIES_PER_CLIENT];
 
 /* Create winsock socket */
-bool CreateSocket(int client)
+bool CreateSocket(Client *pClient)
 {
 	WSADATA data;
 	char aBuf[1024];
@@ -60,9 +59,9 @@ bool CreateSocket(int client)
 		return false;
 	}
 
-	sock[client] = WSASocket(AF_INET, SOCK_RAW, IPPROTO_UDP, NULL, 0, 0);
+	pClient->m_Networking.sock = WSASocket(AF_INET, SOCK_RAW, IPPROTO_UDP, NULL, 0, 0);
 
-	if (sock[client] == INVALID_SOCKET)
+	if (pClient->m_Networking.sock == INVALID_SOCKET)
 	{
 		sprintf_s(aBuf, sizeof(aBuf), "WSASocket() failed: %d\n", WSAGetLastError());
 		Output(aBuf);
@@ -71,7 +70,7 @@ bool CreateSocket(int client)
 
 	BOOL optvalue = TRUE;
 
-	if (setsockopt(sock[client], IPPROTO_IP, IP_HDRINCL, (char *)&optvalue, sizeof(optvalue)) == SOCKET_ERROR)
+	if (setsockopt(pClient->m_Networking.sock, IPPROTO_IP, IP_HDRINCL, (char *)&optvalue, sizeof(optvalue)) == SOCKET_ERROR)
 	{
 		sprintf_s(aBuf, sizeof(aBuf), "setsockopt(IP_HDRINCL) failed: %d\n", WSAGetLastError());
 		Output(aBuf);
@@ -85,7 +84,7 @@ bool CreateSocket(int client)
 }
 
 /* Create winsock socket */
-bool CreateSocket_d(int client, int id)
+bool CreateSocket_d(Client *pClient, int id)
 {
 	WSADATA data;
 	char aBuf[1024];
@@ -97,9 +96,9 @@ bool CreateSocket_d(int client, int id)
 		return false;
 	}
 
-	sockDummies[client][id] = WSASocket(AF_INET, SOCK_RAW, IPPROTO_UDP, NULL, 0, 0);
+	pClient->m_Networking.sockDummies[id] = WSASocket(AF_INET, SOCK_RAW, IPPROTO_UDP, NULL, 0, 0);
 
-	if (sockDummies[client][id] == INVALID_SOCKET)
+	if (pClient->m_Networking.sockDummies[id] == INVALID_SOCKET)
 	{
 		sprintf_s(aBuf, sizeof(aBuf), "WSASocket() failed: %d\n", WSAGetLastError());
 		Output(aBuf);
@@ -108,7 +107,7 @@ bool CreateSocket_d(int client, int id)
 
 	BOOL optvalue = TRUE;
 
-	if (setsockopt(sockDummies[client][id], IPPROTO_IP, IP_HDRINCL, (char *)&optvalue, sizeof(optvalue)) == SOCKET_ERROR)
+	if (setsockopt(pClient->m_Networking.sockDummies[id], IPPROTO_IP, IP_HDRINCL, (char *)&optvalue, sizeof(optvalue)) == SOCKET_ERROR)
 	{
 		sprintf_s(aBuf, sizeof(aBuf), "setsockopt(IP_HDRINCL) failed: %d\n", WSAGetLastError());
 		Output(aBuf);
@@ -122,16 +121,16 @@ bool CreateSocket_d(int client, int id)
 }
 
 /* Close the socket */
-void CloseSocket(int client)
+void CloseSocket(Client *pClient)
 {
-	closesocket(sock[client]);
+	closesocket(pClient->m_Networking.sock);
 	WSACleanup();
 }
 
 /* Close the socket */
-void CloseSocket_d(int client, int id)
+void CloseSocket_d(Client *pClient, int id)
 {
-	closesocket(sockDummies[client][id]);
+	closesocket(pClient->m_Networking.sockDummies[id]);
 	WSACleanup();
 }
 
@@ -161,7 +160,7 @@ USHORT checksum(USHORT *buffer, int size)
 	return (USHORT)(~cksum);
 }
 
-void SendData(int client, unsigned int srcIp, unsigned short srcPort, unsigned int dstIp, unsigned short dstPort, const char *pData, int Size)
+void SendData(Client *pClient, unsigned int srcIp, unsigned short srcPort, unsigned int dstIp, unsigned short dstPort, const char *pData, int Size)
 {
 	SOCKADDR_IN m_Sin;
 	unsigned short m_ChecksumUDP;
@@ -242,10 +241,10 @@ void SendData(int client, unsigned int srcIp, unsigned short srcPort, unsigned i
 	m_Sin.sin_port = dstPort;
 	m_Sin.sin_addr.s_addr = dstIp;
 
-	sendto(sock[client], m_aPacket, sizeof(IP) + sizeof(UDP) + Size, 0, (SOCKADDR *)&m_Sin, sizeof(m_Sin));
+	sendto(pClient->m_Networking.sock, m_aPacket, sizeof(IP) + sizeof(UDP) + Size, 0, (SOCKADDR *)&m_Sin, sizeof(m_Sin));
 }
 
-void SendData(int client, int id, unsigned int srcIp, unsigned short srcPort, unsigned int dstIp, unsigned short dstPort, const char *pData, int Size)
+void SendData(Client *pClient, int id, unsigned int srcIp, unsigned short srcPort, unsigned int dstIp, unsigned short dstPort, const char *pData, int Size)
 {
 	SOCKADDR_IN m_Sin;
 	unsigned short m_ChecksumUDP;
@@ -326,5 +325,5 @@ void SendData(int client, int id, unsigned int srcIp, unsigned short srcPort, un
 	m_Sin.sin_port = dstPort;
 	m_Sin.sin_addr.s_addr = dstIp;
 
-	sendto(sockDummies[client][id], m_aPacket, sizeof(IP) + sizeof(UDP) + Size, 0, (SOCKADDR *)&m_Sin, sizeof(m_Sin));
+	sendto(pClient->m_Networking.sockDummies[id], m_aPacket, sizeof(IP) + sizeof(UDP) + Size, 0, (SOCKADDR *)&m_Sin, sizeof(m_Sin));
 }

