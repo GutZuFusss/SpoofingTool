@@ -1,0 +1,10 @@
+legacy/
+update/
+Debug/
+
+*.exe
+*.bat
+*.opensdf
+*.user
+
+ips.txt
