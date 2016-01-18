@@ -1,37 +1,41 @@
-#ifndef _API_H
-#define _API_H
+#pragma once
 
-/* Packet-crafting functions */
-int PackSay(unsigned char *buffer, int id, char *message, int team);
-int PackSay(unsigned char *buffer, char *message, int team);
+#include "client.h"
 
-int PackConnect(unsigned char *buffer, int id);
-int PackClientInfo(unsigned char *buffer, int id);
-int PackReady(unsigned char *buffer, int id);
-int PackSendInfo(unsigned char *buffer, int id);
-int PackEnterGame(unsigned char *buffer, int id);
+/* Packet-crafting functions 
+   d for dummies
 
-int PackKeepAlive(unsigned char *buffer, int id);
+   id = dummy id
+   pClient = pointer to client's api
+*/
+int PackSay_d(Client *pClient, int id, unsigned char *buffer, char *message, int team);
+int PackSay(Client *pClient, unsigned char *buffer, char *message, int team);
 
-int PackDisconnect(unsigned char *buffer, int id);
-int PackDisconnect(unsigned char *buffer);
+int PackConnect_d(Client *pClient, int id, unsigned char *buffer);
+int PackClientInfo_d(Client *pClient, int id, unsigned char *buffer);
+int PackReady_d(Client *pClient, int id, unsigned char *buffer);
+int PackSendInfo_d(Client *pClient, int id, unsigned char *buffer);
+int PackEnterGame_d(Client *pClient, int id, unsigned char *buffer);
 
-int PackVote(unsigned char *buffer, int id, int v);
-int PackVote(unsigned char *buffer, int v);
+int PackKeepAlive_d(Client *pClient, int id, unsigned char *buffer);
 
-int PackKill(unsigned char *buffer); 
+int PackDisconnect_d(Client *pClient, int id, unsigned char *buffer);
+int PackDisconnect(Client *pClient, unsigned char *buffer);
 
-int PackChangeInfo(unsigned char *buffer, char *name, char *clan, int country, char *skin, int usecustomcolor, int colorbody, int colorfeet);
+int PackVote_d(Client *pClient, int id, unsigned char *buffer, int v);
+int PackVote(Client *pClient, unsigned char *buffer, int v);
 
-int PackRconAuth(unsigned char *buffer);
+int PackKill_d(Client *pClient, int id, unsigned char *buffer); 
+int PackKill(Client *pClient, unsigned char *buffer);
 
-int PackEmoticon(unsigned char *buffer, int id, int e);
-int PackEmoticon(unsigned char *buffer, int e);
+//int PackChangeInfo(int client, unsigned char *buffer, char *name, char *clan, int country, char *skin, int usecustomcolor, int colorbody, int colorfeet);
 
-int PackRcon(unsigned char *buffer, const char *pCmd);
+//int PackRconAuth(int client, unsigned char *buffer);
 
-void Reset(int id);
-void Reset();
+int PackEmoticon_d(Client *pClient, int id, unsigned char *buffer, int e);
+int PackEmoticon(Client *pClient, unsigned char *buffer, int e);
 
+//int PackRcon(unsigned char *buffer, const char *pCmd);
 
-#endif
+void Reset_d(Client *pClient, int id);
+void Reset(Client *pClient);

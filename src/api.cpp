@@ -5,7 +5,9 @@
 #include <stdio.h>
 
 #include "api.h"
+#include "client.h"
 #include "dummydata.h"
+#include "core.h"
 
 enum
 {
@@ -18,11 +20,6 @@ unsigned char *m_pCurrent;
 unsigned char *m_pEnd;
 int m_Error;
 
-int SequenceDummies[64];// 0 - 1023
-int AckDummies[64];
-
-int Sequence;
-int Ack;
 
 /* Used to compress the packets */
 unsigned char* CompressionPack(unsigned char *pDst, int i)
@@ -129,14 +126,14 @@ enum
 {
 	NETMSG_NULL = 0,
 
-	// the first thing sent by the client
-	// contains the version info for the client
+	// the first thing sent by the pClient
+	// contains the version info for the pClient
 	NETMSG_INFO = 1,
 
 	// sent by server
-	NETMSG_MAP_CHANGE,		// sent when client should switch map
+	NETMSG_MAP_CHANGE,		// sent when pClient should switch map
 	NETMSG_MAP_DATA,		// map transfer, contains a chunk of the map file
-	NETMSG_CON_READY,		// connection is ready, client should send start info
+	NETMSG_CON_READY,		// connection is ready, pClient should send start info
 	NETMSG_SNAP,			// normal snapshot, multiple parts
 	NETMSG_SNAPEMPTY,		// empty snapshot
 	NETMSG_SNAPSINGLE,		// ?
@@ -148,10 +145,10 @@ enum
 	NETMSG_AUTH_CHALLANGE,	//
 	NETMSG_AUTH_RESULT,		//
 
-	// sent by client
+	// sent by pClient
 	NETMSG_READY,			//
 	NETMSG_ENTERGAME,
-	NETMSG_INPUT,			// contains the inputdata from the client
+	NETMSG_INPUT,			// contains the inputdata from the pClient
 	NETMSG_RCON_CMD,		//
 	NETMSG_RCON_AUTH,		//
 	NETMSG_REQUEST_MAP_DATA,//
@@ -229,11 +226,11 @@ enum
 };
 
 /* Make the header of the packet ready to send, applies flags and more */
-unsigned char* PackHeader(unsigned char *pData, int fl /*flags*/, int si /*size*/, int sq /*sequence*/)
+unsigned char* PackHeader(unsigned char *pData, int fl /*flags*/, int si /*size*/, int sq /*pClient->m_Api.Sequence*/)
 {
 	pData[0] = ((fl & 3) << 6) | ((si >> 4) & 0x3f);
 	pData[1] = (si & 0xf);
-	if (fl & FLAGS_VITAL)
+	if (fl&FLAGS_VITAL)
 	{
 		pData[1] |= (sq >> 2) & 0xf0;
 		pData[2] = sq & 0xff;
@@ -244,24 +241,24 @@ unsigned char* PackHeader(unsigned char *pData, int fl /*flags*/, int si /*size*
 }
 
 /* Begin crafting our packet */
-int StartofPacking(unsigned char *buffer, int flags = FLAGS_FLUSH)
+int StartofPacking(Client *pClient, unsigned char *buffer, int flags = FLAGS_FLUSH)
 {
 	int Flags = 0;
-	//int Sequence = 0;// 0 - 1023
-	//int Ack = 0;
+	//int pClient->m_Api.Sequence = 0;// 0 - 1023
+	//int pClient->m_Api.Ack = 0;
 
-	Ack = GetRand(1, 1024);
+	pClient->m_Api.Ack = GetRand(1, 1024);
 
 	Flags &= ~8; // NO COMMPRESSION FLAG CUZ IT SUCKZ
 
 	int BufferSize = 0;
 
 	if (flags == NET_PACKETFLAG_CONTROL)
-		buffer[0] = ((1 << 4) & 0xf0) | ((Ack >> 8) & 0xf);
+		buffer[0] = ((1 << 4) & 0xf0) | ((pClient->m_Api.Ack >> 8) & 0xf);
 	else
-		buffer[0] = ((Flags << 4) & 0xf0) | ((Ack >> 8) & 0xf);
+		buffer[0] = ((Flags << 4) & 0xf0) | ((pClient->m_Api.Ack >> 8) & 0xf);
 
-	buffer[1] = Ack & 0xff;
+	buffer[1] = pClient->m_Api.Ack & 0xff;
 
 	if (flags == NET_PACKETFLAG_CONTROL)
 		buffer[2] = 0;//--ChunkNum
@@ -274,16 +271,16 @@ int StartofPacking(unsigned char *buffer, int flags = FLAGS_FLUSH)
 
 	if (flags == NET_PACKETFLAG_CONTROL)
 	{
-		Sequence = 0;
-		//++Ack[id] %= 1024;
+		pClient->m_Api.Sequence = 0;
+		//++pClient->m_Api.Ack[id] %= 1024;
 		return BufferSize;
 	}
 
 	if (flags&FLAGS_VITAL)
 	{
 		BufferSize += 3;
-		Sequence = (Sequence + 1) % 1024;
-		//++Ack %= 1024;
+		pClient->m_Api.Sequence = (pClient->m_Api.Sequence + 1) % 1024;
+		//++pClient->m_Api.Ack %= 1024;
 	}
 	else
 		BufferSize += 2;
@@ -294,24 +291,24 @@ int StartofPacking(unsigned char *buffer, int flags = FLAGS_FLUSH)
 }
 
 /* Another function to begin the crafting of the packet with an additional "id" parameter to use a specific socket*/
-int StartofPacking(int id, unsigned char *buffer, int flags = FLAGS_FLUSH)
+int StartofPacking_d(Client *pClient, int id, unsigned char *buffer, int flags = FLAGS_FLUSH)
 {
 	int Flags = 0;
-	//int Sequence = 0;// 0 - 1023
-	//int Ack = 0;
+	//int pClient->m_Api.Sequence = 0;// 0 - 1023
+	//int pClient->m_Api.Ack = 0;
 
-	AckDummies[id] = GetRand(1, 1024);
+	pClient->m_Api.AckDummies[id] = GetRand(1, 1024);
 
 	Flags &= ~8; // NO COMMPRESSION FLAG CUZ IT SUCKZ
 
 	int BufferSize = 0;
 
 	if (flags == NET_PACKETFLAG_CONTROL)
-		buffer[0] = ((1 << 4) & 0xf0) | ((AckDummies[id] >> 8) & 0xf);
+		buffer[0] = ((1 << 4) & 0xf0) | ((pClient->m_Api.AckDummies[id] >> 8) & 0xf);
 	else
-		buffer[0] = ((Flags << 4) & 0xf0) | ((AckDummies[id] >> 8) & 0xf);
+		buffer[0] = ((Flags << 4) & 0xf0) | ((pClient->m_Api.AckDummies[id] >> 8) & 0xf);
 
-	buffer[1] = AckDummies[id] & 0xff;
+	buffer[1] = pClient->m_Api.AckDummies[id] & 0xff;
 
 	if (flags == NET_PACKETFLAG_CONTROL)
 		buffer[2] = 0;//--ChunkNum
@@ -324,16 +321,16 @@ int StartofPacking(int id, unsigned char *buffer, int flags = FLAGS_FLUSH)
 
 	if (flags == NET_PACKETFLAG_CONTROL)
 	{
-		SequenceDummies[id] = 0;
-		//++AckDummies[id] %= 1024;
+		pClient->m_Api.SequenceDummies[id] = 0;
+		//++pClient->m_Api.AckDummies[id] %= 1024;
 		return BufferSize;
 	}
 	
 	if (flags&FLAGS_VITAL)
 	{
 		BufferSize += 3;
-		SequenceDummies[id] = (SequenceDummies[id] + 1) % 1024;
-		//++Ack %= 1024;
+		pClient->m_Api.SequenceDummies[id] = (pClient->m_Api.SequenceDummies[id] + 1) % 1024;
+		//++pClient->m_Api.Ack %= 1024;
 	}
 	else
 		BufferSize += 2;
@@ -344,7 +341,7 @@ int StartofPacking(int id, unsigned char *buffer, int flags = FLAGS_FLUSH)
 }
 
 /* Finalize the crafting of the packet */
-int EndofPacking(unsigned char *buffer, int buffersize, int flags, bool system = false)
+int EndofPacking(Client *pClient, unsigned char *buffer, int buffersize, int flags, bool system = false)
 {
 	m_aBuffer[0] <<= 1; // shift the packet id
 	if (system)
@@ -361,13 +358,13 @@ int EndofPacking(unsigned char *buffer, int buffersize, int flags, bool system =
 	else
 		sizebefore = buffersize - Size() - 2;
 
-	PackHeader(&buffer[sizebefore], flags, Size(), Sequence); // the header
+	PackHeader(&buffer[sizebefore], flags, Size(), pClient->m_Api.Sequence); // the header
 
 	return buffersize;
 }
 
 /* Also for finalizing the crafting of the packet, again with additional id parameter to define the socket to use*/
-int EndofPacking(unsigned char *buffer, int buffersize, int id, int flags, bool system = false)
+int EndofPacking_d(Client *pClient, int id, unsigned char *buffer, int buffersize, int flags, bool system = false)
 {
 	m_aBuffer[0] <<= 1; // shift the packet id
 	if(system)
@@ -384,42 +381,42 @@ int EndofPacking(unsigned char *buffer, int buffersize, int id, int flags, bool 
 	else
 		sizebefore = buffersize - Size() - 2;
 
-	PackHeader(&buffer[sizebefore], flags, Size(), SequenceDummies[id]); // the header
+	PackHeader(&buffer[sizebefore], flags, Size(), pClient->m_Api.SequenceDummies[id]); // the header
 
 	return buffersize;
 }
 
-/* Craft a chatmessage (id) */
-int PackSay(unsigned char *buffer, int id, char *message, int team)
+/* Craft a chatmessage (of pClient) */
+int PackSay_d(Client *pClient, int id, unsigned char *buffer, char *message, int team)
 {
-	int BufferSize = StartofPacking(id, buffer, FLAGS_FLUSH);
+	int BufferSize = StartofPacking_d(pClient, id, buffer, FLAGS_FLUSH);
 
 	AddInt(NETMSGTYPE_CL_SAY); //--packet id
 	AddInt(team); //--team
 	AddString(message, -1); //--text
 	
-	return EndofPacking(buffer, BufferSize, id, FLAGS_FLUSH);
+	return EndofPacking_d(pClient, id, buffer, BufferSize, FLAGS_FLUSH);
 }
 
 /* Craft a chatmessage */
-int PackSay(unsigned char *buffer, char *message, int team)
+int PackSay(Client *pClient, unsigned char *buffer, char *message, int team)
 {
-	int BufferSize = StartofPacking(buffer, FLAGS_FLUSH);
+	int BufferSize = StartofPacking(pClient, buffer, FLAGS_FLUSH);
 
 	AddInt(NETMSGTYPE_CL_SAY); //--packet id
 	AddInt(team); //--team
 	AddString(message, -1); //--text
 
-	return EndofPacking(buffer, BufferSize, FLAGS_FLUSH);
+	return EndofPacking(pClient, buffer, BufferSize, FLAGS_FLUSH);
 }
 
 /* Craft a connect packet */
-int PackConnect(unsigned char *buffer, int id)
+int PackConnect_d(Client *pClient, int id, unsigned char *buffer)
 {
 	//memcpy((char *)buffer, "\x10\x00\x00\x01", 4);
 	//return 4;
 
-	int BufferSize = StartofPacking(id, buffer, NET_PACKETFLAG_CONTROL);
+	int BufferSize = StartofPacking_d(pClient, id, buffer, NET_PACKETFLAG_CONTROL);
 
 	buffer[BufferSize] = NET_CTRLMSG_CONNECT;
 
@@ -429,9 +426,9 @@ int PackConnect(unsigned char *buffer, int id)
 }
 
 /* Craft a keep-alive packet */
-int PackKeepAlive(unsigned char *buffer, int id)
+int PackKeepAlive_d(Client *pClient, int id, unsigned char *buffer)
 {
-	int BufferSize = StartofPacking(id, buffer, NET_PACKETFLAG_CONTROL);
+	int BufferSize = StartofPacking_d(pClient, id, buffer, NET_PACKETFLAG_CONTROL);
 
 	buffer[BufferSize] = NET_CTRLMSG_KEEPALIVE;
 
@@ -440,30 +437,30 @@ int PackKeepAlive(unsigned char *buffer, int id)
 	return BufferSize;
 }
 
-/* Craft a packet containing the client's info */
-int PackClientInfo(unsigned char *buffer, int id)
+/* Craft a packet containing the pClient's info */
+int PackClientInfo_d(Client *pClient, int id, unsigned char *buffer)
 {
-	int BufferSize = StartofPacking(id, buffer, FLAGS_VITAL | FLAGS_FLUSH);
+	int BufferSize = StartofPacking_d(pClient, id, buffer, FLAGS_VITAL | FLAGS_FLUSH);
 
 	AddInt(NETMSG_INFO); //--packet id
 	AddString("0.6 626fce9a778df4d4", 128);// GAME_NETVERSION "0.6 626fce9a778df4d4"
 	AddString("kek", 128); // password (to teh server?)
 
-	return EndofPacking(buffer, BufferSize, id, FLAGS_VITAL | FLAGS_FLUSH, true);
+	return EndofPacking_d(pClient, id, buffer, BufferSize, FLAGS_VITAL | FLAGS_FLUSH, true);
 
-	//Sequence++;
+	//pClient->m_Api.Sequence++;
 	//memcpy((char *)buffer, "\x00\x00\x01\x42\x02\x01\x03\x30\x2e\x36\x20\x36\x32\x36\x66\x63\x65\x39\x61\x37\x37\x38\x64\x66\x34\x64\x34\x00\x62\x61\x6e\x61\x6e\x65\x6e\x62\x61\x75\x6d\x00", 40);
 	//return 40;
 }
 
 /* Craft a ready packet*/
-int PackReady(unsigned char *buffer, int id)
+int PackReady_d(Client *pClient, int id, unsigned char *buffer)
 {
-	int BufferSize = StartofPacking(id, buffer, FLAGS_VITAL | FLAGS_FLUSH);
+	int BufferSize = StartofPacking_d(pClient, id, buffer, FLAGS_VITAL | FLAGS_FLUSH);
 
 	AddInt(NETMSG_READY); //--packet id
 
-	return EndofPacking(buffer, BufferSize, id, FLAGS_VITAL | FLAGS_FLUSH, true);
+	return EndofPacking_d(pClient, id, buffer, BufferSize, FLAGS_VITAL | FLAGS_FLUSH, true);
 	
 	
 	//memcpy((char *)buffer, "\x00\x01\x01\x40\x01\x02\x1d", 7);
@@ -471,42 +468,42 @@ int PackReady(unsigned char *buffer, int id)
 }
 
 /* Craft the enter-game packet */
-int PackEnterGame(unsigned char *buffer, int id)
+int PackEnterGame_d(Client *pClient, int id, unsigned char *buffer)
 {
-	int BufferSize = StartofPacking(id, buffer, FLAGS_VITAL | FLAGS_FLUSH);
+	int BufferSize = StartofPacking_d(pClient, id, buffer, FLAGS_VITAL | FLAGS_FLUSH);
 
 	AddInt(NETMSG_ENTERGAME); //--packet id
 
-	return EndofPacking(buffer, BufferSize, id, FLAGS_VITAL | FLAGS_FLUSH, true);
+	return EndofPacking_d(pClient, id, buffer, BufferSize, FLAGS_VITAL | FLAGS_FLUSH, true);
 
 	//memcpy((char *)buffer, "\x00\x06\x01\x40\x01\x04\x1f", 7);
 	//return 7;
 }
 
 /* Craft the send-info packet (change info of the dummies here) */
-int PackSendInfo(unsigned char *buffer, int id)
+int PackSendInfo_d(Client *pClient, int id, unsigned char *buffer)
 {
-	int BufferSize = StartofPacking(id, buffer, FLAGS_VITAL | FLAGS_FLUSH);
+	int BufferSize = StartofPacking_d(pClient, id, buffer, FLAGS_VITAL | FLAGS_FLUSH);
 
 	AddInt(NETMSGTYPE_CL_STARTINFO);
 	AddString(pNames[id], -1);// nick
-	AddString("69", -1);// clan
+	AddString("Verkekt", -1);// clan
 	AddInt(-1);// country
 	AddString(pSkins[rand()%15], -1);// skin
 	AddInt(0);// use default colors
 	AddInt(65048);// body
 	AddInt(65048);// feet
 
-	return EndofPacking(buffer, BufferSize, id, FLAGS_VITAL | FLAGS_FLUSH);
+	return EndofPacking_d(pClient, id, buffer, BufferSize, FLAGS_VITAL | FLAGS_FLUSH);
 
 	//memcpy((char *)buffer, "\x00\x03\x01\x43\x0e\x03\x28\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x00\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x00\x40\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x00\x01\x80\xfc\xc7\x05\x80\xfc\x07", 68);
 	//return 68;
 }
 
-/* Craft the disconnect packet (id) */
-int PackDisconnect(unsigned char *buffer, int id)
+/* Craft the disconnect packet (of pClient) */
+int PackDisconnect_d(Client *pClient, int id, unsigned char *buffer)
 {
-	int BufferSize = StartofPacking(id, buffer, NET_PACKETFLAG_CONTROL);
+	int BufferSize = StartofPacking_d(pClient, id, buffer, NET_PACKETFLAG_CONTROL);
 
 	buffer[BufferSize] = NET_CTRLMSG_CLOSE;
 
@@ -516,9 +513,9 @@ int PackDisconnect(unsigned char *buffer, int id)
 }
 
 /* Craft the disconnect packet */
-int PackDisconnect(unsigned char *buffer)
+int PackDisconnect(Client *pClient, unsigned char *buffer)
 {
-	int BufferSize = StartofPacking(buffer, NET_PACKETFLAG_CONTROL);
+	int BufferSize = StartofPacking(pClient, buffer, NET_PACKETFLAG_CONTROL);
 
 	buffer[BufferSize] = NET_CTRLMSG_CLOSE;
 
@@ -527,90 +524,90 @@ int PackDisconnect(unsigned char *buffer)
 	return BufferSize;
 }
 
-/* Craft the voting packet (id) */
-int PackVote(unsigned char *buffer, int id, int v)
+/* Craft the voting packet (dummy) */
+int PackVote_d(Client *pClient, int id, unsigned char *buffer, int v)
 {
-	int BufferSize = StartofPacking(id, buffer, FLAGS_FLUSH);
+	int BufferSize = StartofPacking_d(pClient, id, buffer, FLAGS_FLUSH);
 
 	AddInt(NETMSGTYPE_CL_VOTE);
 	AddInt(v);
-	return EndofPacking(buffer, BufferSize, id, FLAGS_FLUSH);
+	return EndofPacking_d(pClient, id, buffer, BufferSize, FLAGS_FLUSH);
 }
 
 /* Craft the voting packet */
-int PackVote(unsigned char *buffer, int v)
+int PackVote(Client *pClient, unsigned char *buffer, int v)
 {
-	int BufferSize = StartofPacking(buffer, FLAGS_FLUSH);
+	int BufferSize = StartofPacking(pClient, buffer, FLAGS_FLUSH);
 
 	AddInt(NETMSGTYPE_CL_VOTE);
 	AddInt(v);
-	return EndofPacking(buffer, BufferSize, FLAGS_FLUSH);
+	return EndofPacking(pClient, buffer, BufferSize, FLAGS_FLUSH);
 }
 
-/* Craft the kill packet (id) */
-int PackKill(unsigned char *buffer, int id)
+/* Craft the kill packet (dummy) */
+int PackKill_d(Client *pClient, int id, unsigned char *buffer)
 {
-	int BufferSize = StartofPacking(id, buffer, FLAGS_FLUSH);
+	int BufferSize = StartofPacking_d(pClient, id, buffer, FLAGS_FLUSH);
 
 	AddInt(NETMSGTYPE_CL_KILL);
-	return EndofPacking(buffer, BufferSize, id, FLAGS_FLUSH);
+	return EndofPacking_d(pClient, id, buffer, BufferSize, FLAGS_FLUSH);
 }
 
 /* Craft the kill packet */
-int PackKill(unsigned char *buffer)
+int PackKill(Client *pClient, unsigned char *buffer)
 {
-	int BufferSize = StartofPacking(buffer, FLAGS_FLUSH);
+	int BufferSize = StartofPacking(pClient, buffer, FLAGS_FLUSH);
 
 	AddInt(NETMSGTYPE_CL_KILL);
-	return EndofPacking(buffer, BufferSize, FLAGS_FLUSH);
+	return EndofPacking(pClient, buffer, BufferSize, FLAGS_FLUSH);
 }
 
 /* TODO: Get this working (great for banning people) */
-int PackRconAuth(unsigned char *buffer)
+/*int PackRconAuth(unsigned char *buffer)
 {
-	/*int BufferSize = StartofPacking(buffer, id, FLAGS_FLUSH);
+	int BufferSize = StartofPacking(buffer, id, FLAGS_FLUSH);
 
 	AddInt(NETMSG_RCON_AUTH);
 	AddString("", 32);
 	AddString("wrongpw", 32);
 	AddInt(1);
-	return EndofPacking(buffer, BufferSize, id, FLAGS_FLUSH);*/
-	memcpy((char *)buffer, "\x10\x00\x01\x00\x07\x24\x00\x31\x32\x33\x00\x01", 12);
-	return 12;
-}
+	return EndofPacking(buffer, BufferSize, id, FLAGS_FLUSH);
+	//memcpy((char *)buffer, "\x10\x00\x01\x00\x07\x24\x00\x31\x32\x33\x00\x01", 12);
+	//return 12;
+}*/
 
 /* Craft the packet containing a rcon line */
-int PackRcon(unsigned char *buffer, const char *pCmd)
+/*int PackRcon(unsigned char *buffer, const char *pCmd)
 {
 	int BufferSize = StartofPacking(buffer, FLAGS_VITAL);
 
 	AddInt(NETMSG_RCON_AUTH);
 	AddString(pCmd, 256);
 	return EndofPacking(buffer, BufferSize, FLAGS_VITAL);
-}
+}*/
 
-/* Crafts the emoticon packet (id) */
-int PackEmoticon(unsigned char *buffer, int id, int e)
+/* Crafts the emoticon packet (dummy) */
+int PackEmoticon_d(Client *pClient, int id, unsigned char *buffer, int e)
 {
-	int BufferSize = StartofPacking(id, buffer, FLAGS_FLUSH);
+	int BufferSize = StartofPacking_d(pClient, id, buffer, FLAGS_FLUSH);
 
 	AddInt(NETMSGTYPE_CL_EMOTICON);
 	AddInt(e);
-	return EndofPacking(buffer, BufferSize, id, FLAGS_FLUSH);
+	return EndofPacking_d(pClient, id, buffer, BufferSize, FLAGS_FLUSH);
 }
 
 /* Crafts the emoticon packet */
-int PackEmoticon(unsigned char *buffer, int e)
+int PackEmoticon(Client *pClient, unsigned char *buffer, int e)
 {
-	int BufferSize = StartofPacking(buffer, FLAGS_FLUSH);
+	int BufferSize = StartofPacking(pClient, buffer, FLAGS_FLUSH);
 
 	AddInt(NETMSGTYPE_CL_EMOTICON);
 	AddInt(e);
-	return EndofPacking(buffer, BufferSize, FLAGS_FLUSH);
+	return EndofPacking(pClient, buffer, BufferSize, FLAGS_FLUSH);
 }
 
 /* Craft the change-info packet */
-int PackChangeInfo(unsigned char *buffer, char *name, char *clan, int country, char *skin, int usecustomcolor, int colorbody, int colorfeet)
+/*int PackChangeInfo(unsigned char *buffer, char *name, char *clan, int country, char *skin, int usecustomcolor, int colorbody, int colorfeet)
 {
 	int BufferSize = StartofPacking(buffer, FLAGS_VITAL);
 
@@ -624,20 +621,20 @@ int PackChangeInfo(unsigned char *buffer, char *name, char *clan, int country, c
 	AddInt(colorfeet);
 
 	return EndofPacking(buffer, BufferSize, FLAGS_VITAL);
-}
+}*/
 
-/* Reset a dummy (id) */
-void Reset(int id)
+/* Reset a pClient (dummy) */
+void Reset_d(Client *pClient, int id)
 {
-	SequenceDummies[id] = 0;
-	AckDummies[id] = 0;
+	pClient->m_Api.SequenceDummies[id] = 0;
+	pClient->m_Api.AckDummies[id] = 0;
 	ResetPacker();
 }
 
-/* The complete packer, inluding the ack and the seq */
-void Reset()
+/* Reset a pClient */
+void Reset(Client *pClient)
 {
-	Sequence = 0;
-	Ack = 0;
+	pClient->m_Api.Sequence = 0;
+	pClient->m_Api.Ack = 0;
 	ResetPacker();
 }
