@@ -401,8 +401,12 @@ int _tmain(int argc, _TCHAR* argv[])
 	int clientCount = 0;
 	char aBuf[32] = {0};
 
-	printf("Starting...\n");
-
+	printf("Starting...");
+#ifdef _DEBUG
+	printf("        [[ Warning: Running a debug configuration. This     ]]\n");
+	printf("                   [[ will affect performance and speed of the zervor! ]]\n");
+#endif
+	printf("\n");
 	srand((unsigned int)time(NULL));
 
 	// WSA
@@ -450,7 +454,7 @@ inf:
 			return 1;
 		}
 	}
-	if(Port != 2016) printf("-- WARNING: Using alternative Port %i for communication! --\n", Port);
+	if(Port != 2016) printf("         [[ WARNING: Using alternative Port %i for communication! ]]\n\n", Port);
 
 	// Listen
 	if (listen(g_Server, 5) == SOCKET_ERROR)
