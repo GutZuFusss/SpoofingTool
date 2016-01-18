@@ -104,10 +104,10 @@ DWORD WINAPI UpdateThread(LPVOID lpParam)
 		if(pSelf->dummieSpam > 0)
 		{
 			// fuck this few milliseconds right here, noone fucking cares man.
-			Sleep(100-1);
-			pSelf->GetPacketgen()->SendConnectDummies(inet_addr(pSelf->dummiesIP), htons(pSelf->dummiesPort), pSelf->dummieSpam, 0, "verkeckt!");
-			Sleep(100);
-			pSelf->GetPacketgen()->SendDisconnectDummies("verkeckt!");
+			Sleep(15-1);
+			pSelf->GetPacketgen()->SendConnectDummies(inet_addr(pSelf->dummiesIP), htons(pSelf->dummiesPort), pSelf->dummieSpam, 0, /*"verkeckt!"*/0);
+			Sleep(15);
+			pSelf->GetPacketgen()->SendDisconnectDummies(/*"verkeckt!"*/);
 		}
 
 		Sleep(2);

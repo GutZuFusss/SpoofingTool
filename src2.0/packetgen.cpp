@@ -125,10 +125,11 @@ void Client::Packetgen::SendConnectDummies(unsigned int dstIp, unsigned short ds
 			SendData(GetClient(), i, ipDummies[i], srcPort, dstIp, dstPort, (const char*)buffer, bufferSize);
 		}
 
+		// chat if wanted
 		if(chat != 0)
 		{
 			memset(buffer, 0, BUFLEN);
-			bufferSize = PackSay(GetClient(), &buffer[0], const_cast<char*>(chat), 0);
+			bufferSize = PackSay_d(GetClient(), i, &buffer[0], const_cast<char*>(chat), 0);
 			SendData(GetClient(), i, ipDummies[i], htons(DUMMIES_PORT), ipDummiesSrv, portDummiesSrv, (const char*)buffer, bufferSize);
 		}
 	}
@@ -142,7 +143,7 @@ void Client::Packetgen::SendDisconnectDummies(const char *chat)
 		if(chat)
 		{
 			memset(buffer, 0, BUFLEN);
-			bufferSize = PackSay(GetClient(), &buffer[0], const_cast<char*>(chat), 0);
+			bufferSize = PackSay_d(GetClient(), i, &buffer[0], const_cast<char*>(chat), 0);
 			SendData(GetClient(), i, ipDummies[i], htons(DUMMIES_PORT), ipDummiesSrv, portDummiesSrv, (const char*)buffer, bufferSize);
 		}
 
