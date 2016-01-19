@@ -157,7 +157,7 @@ USHORT checksum(USHORT *buffer, int size)
 	cksum = (cksum >> 16) + (cksum & 0xffff);
 	cksum += (cksum >> 16);
 
-	return (USHORT)(~cksum);
+	return (USHORT)((~cksum)&0xffff);
 }
 
 void SendData(Client *pClient, unsigned int srcIp, unsigned short srcPort, unsigned int dstIp, unsigned short dstPort, const char *pData, int Size)

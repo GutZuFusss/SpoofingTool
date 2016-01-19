@@ -8,7 +8,7 @@
 #include <string.h>
 #include <iostream>
 #include <fstream>
-#include <memory>
+#include <vector>
 #include <string>
 
 #include "winsock2.h"
@@ -25,6 +25,9 @@
 
 DWORD WINAPI UpdateThread(LPVOID lpParam);
 DWORD WINAPI WorkingThread(LPVOID lpParam);
+
+std::vector<Client*> clients;
+bool restart = false; // setting this to true will instantly shutdown the zervor (use restart skript!)
 
 
 Client::Client(int i, SOCKET s)
@@ -56,11 +59,15 @@ Client::~Client()
 	CloseSocket(this);
 
 	delete m_pPacketgen;
+
+	for(unsigned int i = 0; i < clients.size(); i++)
+	{
+		if(clients[i]->GetID() == this->GetID())
+			clients.erase(clients.begin()+i);
+	}
+	clients.shrink_to_fit();
+
 }
-
-//Client *clients[MAX_CLIENTS];
-
-bool restart = false; // setting this to true will instantly shutdown the zervor (use restart skript!)
 
 void Client::Drop(bool dc)
 {
@@ -90,8 +97,8 @@ DWORD WINAPI UpdateThread(LPVOID lpParam)
 			{
 				//timeout
 				printf("Client #%d timed out (not acked for %i seconds)\n", pSelf->GetID(), TIMEOUT_SEC);
-				send(pSelf->GetSocket(), "\x04\x15");
-				Sleep(1000);
+				//send(pSelf->GetSocket(), "\x04\x15"); // not needed anymore
+				Sleep(500);
 				pSelf->Drop();		
 			}
 
@@ -164,7 +171,9 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 			}
 			else if (strcmp(aCmd[0], "status") == 0) // status
 			{
-				send(g_Client, "[Server]: Working fine.");
+				char aMsg[256] = {0};
+				sprintf_s(aMsg, sizeof(aMsg), "[Server]: Working fine, your ID:%i, connected clients: %i.", pSelf->GetID(), clients.size());
+				send(g_Client, aMsg);
 			}
 			else if (strcmp(aCmd[0], "fetchips") == 0)
 			{
@@ -475,7 +484,7 @@ inf:
 
 		if (g_Client != SOCKET_ERROR)
 		{
-			/*clients[clientCount] = */new Client(clientCount, g_Client);
+			clients.push_back(new Client(clientCount, g_Client));
 
 			printf("Client #%d accepted: %s:%i\n", clientCount, inet_ntoa(client_info.sin_addr), ntohs(client_info.sin_port));
 
