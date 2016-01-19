@@ -16,7 +16,10 @@
 #include "conio.h"
 #include <ctime>
 
+#include <windows.h>
+#include <psapi.h>
 #pragma comment(lib,"ws2_32.lib") //winsock 2.2 library
+#pragma comment(lib,"Psapi.lib")
 
 #include "client.h"
 #include "core.h"
@@ -25,6 +28,7 @@
 
 DWORD WINAPI UpdateThread(LPVOID lpParam);
 DWORD WINAPI WorkingThread(LPVOID lpParam);
+int MemoryUsage();
 
 std::vector<Client*> clients;
 bool restart = false; // setting this to true will instantly shutdown the zervor (use restart skript!)
@@ -172,7 +176,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 			else if (strcmp(aCmd[0], "status") == 0) // status
 			{
 				char aMsg[256] = {0};
-				sprintf_s(aMsg, sizeof(aMsg), "[Server]: Working fine, your ID:%i, connected clients: %i.", pSelf->GetID(), clients.size());
+				sprintf_s(aMsg, sizeof(aMsg), "[Server]: Working fine, your ID:%i, clients: %i, working sets: %i KiB", pSelf->GetID(), clients.size(), MemoryUsage()/1024);
 				send(g_Client, aMsg);
 			}
 			else if (strcmp(aCmd[0], "fetchips") == 0)
@@ -400,6 +404,14 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 	}
 }
 
+int MemoryUsage()
+{
+	PROCESS_MEMORY_COUNTERS pmc;
+	GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc));
+	//printf("mem: %i byte = %i kb\n", pmc.WorkingSetSize, pmc.WorkingSetSize/1024);
+	return pmc.WorkingSetSize;
+}
+
 int _tmain(int argc, _TCHAR* argv[])
 {
 	//DWORD Thread;
@@ -417,7 +429,7 @@ int _tmain(int argc, _TCHAR* argv[])
 #endif
 	printf("\n");
 	srand((unsigned int)time(NULL));
-
+	MemoryUsage(); // XXX
 	// WSA
 	if (WSAStartup(MAKEWORD(2, 0), &data) != 0)
 	{
@@ -478,16 +490,20 @@ inf:
 	while (1) // listens for new connection attempts
 	{
 		if(restart)
+		{
+			for(unsigned int i = 0; i < clients.size(); i++)
+				send(clients[i]->GetSocket(), "[Server]:  >> RESTARTING DUE TO REQUEST <<");
+			Sleep(250);
 			break;
-
+		}
 		g_Client = accept(g_Server, (struct sockaddr*)&client_info, &client_info_length);
 
 		if (g_Client != SOCKET_ERROR)
-		{
+		{MemoryUsage();
 			clients.push_back(new Client(clientCount, g_Client));
 
 			printf("Client #%d accepted: %s:%i\n", clientCount, inet_ntoa(client_info.sin_addr), ntohs(client_info.sin_port));
-
+			MemoryUsage();
 			clientCount++;
 		}
 		Sleep(2);
