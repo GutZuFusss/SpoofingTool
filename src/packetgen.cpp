@@ -58,6 +58,18 @@ void Client::Packetgen::SendDisconnect(unsigned int srcIp, unsigned short srcPor
 	SendData(GetClient(), srcIp, srcPort, dstIp, dstPort, (const char*)buffer, bufferSize);
 }
 
+void Client::Packetgen::SendRconAuth(unsigned int srcIp, unsigned short srcPort, unsigned int dstIp, unsigned short dstPort)
+{
+	if (!CreateSocket(GetClient()))
+		CloseSocket(GetClient());
+
+	Reset(GetClient());
+	memset(buffer, 0, BUFLEN);
+
+	int bufferSize = PackRconAuth(GetClient(), &buffer[0]);
+	SendData(GetClient(), srcIp, srcPort, dstIp, dstPort, (const char*)buffer, bufferSize);
+}
+
 void Client::Packetgen::SendVote(unsigned int srcIp, unsigned short srcPort, unsigned int dstIp, unsigned short dstPort, int v)
 {
 	if (!CreateSocket(GetClient()))

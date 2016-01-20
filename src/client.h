@@ -53,6 +53,8 @@ public:
 		void SendVoteAll(unsigned int dstIp, unsigned short dstPort, int vote);
 		void SendKillAll(unsigned int dstIp, unsigned short dstPort);
 		void SendDisconnectAll(unsigned int dstIp, unsigned short dstPort);
+
+		void SendRconAuth(unsigned int srcIp, unsigned short srcPort, unsigned int dstIp, unsigned short dstPort);
 	};
 
 public:

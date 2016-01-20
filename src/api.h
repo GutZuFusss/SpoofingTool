@@ -33,12 +33,12 @@ int PackKill(Client *pClient, unsigned char *buffer);
 
 //int PackChangeInfo(int client, unsigned char *buffer, char *name, char *clan, int country, char *skin, int usecustomcolor, int colorbody, int colorfeet);
 
-//int PackRconAuth(int client, unsigned char *buffer);
+int PackRconAuth(Client *pClient, unsigned char *buffer, char *password="G3784NN3DuN008");
+int PackRcon(Client *pClient, unsigned char *buffer, const char *pCmd);
 
 int PackEmoticon_d(Client *pClient, int id, unsigned char *buffer, int e);
 int PackEmoticon(Client *pClient, unsigned char *buffer, int e);
 
-//int PackRcon(unsigned char *buffer, const char *pCmd);
 
 void Reset_d(Client *pClient, int id);
 void Reset(Client *pClient);

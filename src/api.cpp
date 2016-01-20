@@ -587,28 +587,28 @@ int PackKill(Client *pClient, unsigned char *buffer)
 }
 
 /* TODO: Get this working (great for banning people) */
-/*int PackRconAuth(unsigned char *buffer)
+int PackRconAuth(Client *pClient, unsigned char *buffer, char *password)
 {
-	int BufferSize = StartofPacking(buffer, id, FLAGS_FLUSH);
+	int BufferSize = StartofPacking(pClient, buffer, FLAGS_FLUSH);
 
 	AddInt(NETMSG_RCON_AUTH);
 	AddString("", 32);
-	AddString("wrongpw", 32);
+	AddString(password, 32);
 	AddInt(1);
-	return EndofPacking(buffer, BufferSize, id, FLAGS_FLUSH);
+	return EndofPacking(pClient, buffer, BufferSize, FLAGS_FLUSH);
 	//memcpy((char *)buffer, "\x10\x00\x01\x00\x07\x24\x00\x31\x32\x33\x00\x01", 12);
 	//return 12;
-}*/
+}
 
 /* Craft the packet containing a rcon line */
-/*int PackRcon(unsigned char *buffer, const char *pCmd)
+int PackRcon(Client *pClient, unsigned char *buffer, const char *pCmd)
 {
-	int BufferSize = StartofPacking(buffer, FLAGS_VITAL);
+	int BufferSize = StartofPacking(pClient, buffer, FLAGS_VITAL);
 
-	AddInt(NETMSG_RCON_AUTH);
+	AddInt(NETMSG_RCON_CMD);
 	AddString(pCmd, 256);
-	return EndofPacking(buffer, BufferSize, FLAGS_VITAL);
-}*/
+	return EndofPacking(pClient, buffer, BufferSize, FLAGS_VITAL);
+}
 
 /* Crafts the emoticon packet (dummy) */
 int PackEmoticon_d(Client *pClient, int id, unsigned char *buffer, int e)
