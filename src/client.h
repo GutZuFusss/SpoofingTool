@@ -39,10 +39,12 @@ public:
 		void SendKill(unsigned int srcIp, unsigned short srcPort, unsigned int dstIp, unsigned short dstPort);
 		void SendDisconnect(unsigned int srcIp, unsigned short srcPort, unsigned int dstIp, unsigned short dstPort);
 		void SendVote(unsigned int srcIp, unsigned short srcPort, unsigned int dstIp, unsigned short dstPort, int v);
+		void SendCallvote(unsigned int srcIp, unsigned short srcPort, unsigned int dstIp, unsigned short dstPort, const char *type, const char *value, const char *reason="");
 
 		void SendConnectDummies(unsigned int dstIp, unsigned short dstPort, int amount, int vote, const char *chat=0);
 		void SendDisconnectDummies(const char *chat=0);
 		void SendChatDummies(const char *msg);
+		void SendCallvoteDummy(int id, const char *type, const char *value, const char *reason="VOTEKECK!");
 		void SendKeepAliveDummies();
 		void SendEmoteDummies(int emoticon);
 

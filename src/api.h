@@ -25,6 +25,9 @@ int PackDisconnect(Client *pClient, unsigned char *buffer);
 int PackVote_d(Client *pClient, int id, unsigned char *buffer, int v);
 int PackVote(Client *pClient, unsigned char *buffer, int v);
 
+int PackCallvote_d(Client *pClient, int id, unsigned char *buffer, const char *typ, const char *val, const char *rsn);
+int PackCallvote(Client *pClient, unsigned char *buffer, const char *typ, const char *val, const char *rsn);
+
 int PackKill_d(Client *pClient, int id, unsigned char *buffer); 
 int PackKill(Client *pClient, unsigned char *buffer);
 

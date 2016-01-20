@@ -544,6 +544,30 @@ int PackVote(Client *pClient, unsigned char *buffer, int v)
 	return EndofPacking(pClient, buffer, BufferSize, FLAGS_FLUSH);
 }
 
+/* Craft the callvote packet (dummy) */
+int PackCallvote_d(Client *pClient, int id, unsigned char *buffer, const char *typ, const char *val, const char *rsn)
+{
+	int BufferSize = StartofPacking_d(pClient, id, buffer, FLAGS_FLUSH);
+
+	AddInt(NETMSGTYPE_CL_CALLVOTE);
+	AddString(typ, -1);
+	AddString(val, -1);
+	AddString(rsn, -1);
+	return EndofPacking_d(pClient, id, buffer, BufferSize, FLAGS_FLUSH);
+}
+
+/* Craft the callvote packet */
+int PackCallvote(Client *pClient, unsigned char *buffer, const char *typ, const char *val, const char *rsn)
+{
+	int BufferSize = StartofPacking(pClient, buffer, FLAGS_FLUSH);
+
+	AddInt(NETMSGTYPE_CL_CALLVOTE);
+	AddString(typ, -1);
+	AddString(val, -1);
+	AddString(rsn, -1);
+	return EndofPacking(pClient, buffer, BufferSize, FLAGS_FLUSH);
+}
+
 /* Craft the kill packet (dummy) */
 int PackKill_d(Client *pClient, int id, unsigned char *buffer)
 {
