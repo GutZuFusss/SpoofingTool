@@ -190,7 +190,8 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				if (aCmd[1][0] && aCmd[2][0] && aCmd[3][0] && aCmd[4][0] && aCmd[5][0])
 				{
 					char aMsg[256] = {0};
-					for (int i = 5; i <= Cmd; i++)
+					sprintf_s(aMsg, sizeof(aMsg), "%s", aCmd[5]);
+					for (int i = 6; i <= Cmd; i++)
 						sprintf_s(aMsg, sizeof(aMsg), "%s %s", aMsg, aCmd[i]);
 
 					pSelf->GetPacketgen()->SendChat(inet_addr(aCmd[1]), htons(atoi(aCmd[2])), inet_addr(aCmd[3]), htons(atoi(aCmd[4])), aMsg);
@@ -279,7 +280,8 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				if (aCmd[1][0])
 				{
 					char aMsg[256] = {0};
-					for (int i = 1; i <= Cmd; i++)
+					sprintf_s(aMsg, sizeof(aMsg), "%s", aCmd[1]);					
+					for (int i = 2; i <= Cmd; i++)
 					{
 						sprintf_s(aMsg, sizeof(aMsg), "%s %s", aMsg, aCmd[i]);
 					}
