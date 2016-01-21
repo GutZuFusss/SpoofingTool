@@ -343,7 +343,10 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 							send(g_Client, "[Server]: Dummies connected (voting...)!");
 						}
 						else
-							send(g_Client, "[Server]: Disconnect active dummies first.");
+						{
+							pSelf->GetPacketgen()->SendVoteDummies(inet_addr(aCmd[1]), htons(atoi(aCmd[2])), vote);
+							send(g_Client, "[Server]: Voting using connected dummies!");
+						}
 					}
 					else
 					{

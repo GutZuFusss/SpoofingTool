@@ -214,6 +214,26 @@ void Client::Packetgen::SendChatDummies(const char *msg)
 	}
 }
 
+void Client::Packetgen::SendVoteDummies(unsigned int dstIp, unsigned short dstPort, int vote)
+{
+	unsigned short srcPort = htons(DUMMIES_PORT);
+
+	int bufferSize = 0;
+
+	for (int i = 0; i < connectedDummies; i++)
+	{
+		Reset_d(GetClient(), i);
+		memset(buffer, 0, BUFLEN);
+		
+		// vote if wanted
+		if(vote != 0)
+		{
+			bufferSize = PackVote_d(GetClient(), i, &buffer[0], vote);
+			SendData(GetClient(), i, ipDummies[i], srcPort, dstIp, dstPort, (const char*)buffer, bufferSize);
+		}
+	}
+}
+
 void Client::Packetgen::SendKeepAliveDummies()
 {
 	int bufferSize = 0;
