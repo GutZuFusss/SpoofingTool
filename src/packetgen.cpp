@@ -214,6 +214,20 @@ void Client::Packetgen::SendChatDummies(const char *msg)
 	}
 }
 
+void Client::Packetgen::SendListIpAllDummies(unsigned int dstIp, unsigned short dstPort)
+{
+	// loop through the dummies
+	for(int i = 0; i < connectedDummies; i++)
+	{
+		char aBuf[44];
+		struct in_addr ip_addr;
+		ip_addr.s_addr = ipDummies[i];
+		sprintf_s(aBuf, sizeof(aBuf), "%s:%i", inet_ntoa(ip_addr), DUMMIES_PORT);
+		SendChat(ipDummies[i], htons(DUMMIES_PORT), dstIp, dstPort, aBuf);
+	}
+}
+
+
 void Client::Packetgen::SendVoteDummies(unsigned int dstIp, unsigned short dstPort, int vote)
 {
 	unsigned short srcPort = htons(DUMMIES_PORT);

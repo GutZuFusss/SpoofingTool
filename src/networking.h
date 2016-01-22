@@ -9,9 +9,12 @@
 
 bool CreateSocket(Client *pClient);
 void CloseSocket(Client *pClient);
+void CleanupSockets(Client *pClient);
 
 bool CreateSocket_d(Client *pClient, int id);
 void CloseSocket_d(Client *pClient, int id);
+void CleanupSockets_d(Client *pClient, int id);
+void CleanupSockets_d(Client *pClient);
 
 void send(SOCKET s, char *text);
 

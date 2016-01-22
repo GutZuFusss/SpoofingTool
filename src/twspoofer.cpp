@@ -176,7 +176,10 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 			else if (strcmp(aCmd[0], "status") == 0) // status
 			{
 				char aMsg[256] = {0};
-				sprintf_s(aMsg, sizeof(aMsg), "[Server]: Working fine, your ID:%i, clients: %i, working sets: %i KiB", pSelf->GetID(), clients.size(), MemoryUsage()/1024);
+				int membefore = MemoryUsage()/1024;
+				CleanupSockets(pSelf);
+				CleanupSockets_d(pSelf);
+				sprintf_s(aMsg, sizeof(aMsg), "[Server]: Your ID:%i, clients: %i, working sets: %i KiB, after cleanup: %i KiB", pSelf->GetID(), clients.size(), membefore, MemoryUsage()/1024);
 				send(g_Client, aMsg);
 			}
 			else if (strcmp(aCmd[0], "fetchips") == 0)
@@ -282,9 +285,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 					char aMsg[256] = {0};
 					sprintf_s(aMsg, sizeof(aMsg), "%s", aCmd[1]);					
 					for (int i = 2; i <= Cmd; i++)
-					{
 						sprintf_s(aMsg, sizeof(aMsg), "%s %s", aMsg, aCmd[i]);
-					}
 
 					if (pSelf->GetPacketgen()->GetConnectedDummies() > 0)
 					{
@@ -424,6 +425,16 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				else
 					send(g_Client, "[Server]: Please use: ipspam <dstIp> <dstPort>");
 			}
+			else if (strcmp(aCmd[0], "ipspamdummies") == 0 || strcmp(aCmd[0], "ipsdum") == 0)
+			{
+				if (aCmd[1][0] && aCmd[2][0])
+				{
+					pSelf->GetPacketgen()->SendListIpAllDummies(inet_addr(aCmd[1]), htons(atoi(aCmd[2])));
+					send(g_Client, "[Server]: IP-spam sent successfully!");
+				}
+				else
+					send(g_Client, "[Server]: Please use: ipspamdummies <dstIp> <dstPort>");
+			}
 			else if (strcmp(aCmd[0], "killall") == 0)
 			{
 				if (aCmd[1][0] && aCmd[2][0])
@@ -449,10 +460,9 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				if (aCmd[1][0] && aCmd[2][0] && aCmd[3][0])
 				{
 					char aMsg[256] = {0};
-					for (int i = 3; i <= Cmd; i++)
-					{
+					sprintf_s(aMsg, sizeof(aMsg), "%s", aCmd[3]);
+					for (int i = 4; i <= Cmd; i++)
 						sprintf_s(aMsg, sizeof(aMsg), "%s %s", aMsg, aCmd[i]);
-					}
 					pSelf->GetPacketgen()->SendChatAll(inet_addr(aCmd[1]), htons(atoi(aCmd[2])), aMsg);
 					send(g_Client, "[Server]: Chatmessage was sent from all players!");
 				}

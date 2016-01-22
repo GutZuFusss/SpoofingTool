@@ -1,5 +1,8 @@
 #pragma once
 
+#include <stdlib.h>
+#include <vector>
+
 #include "winsock2.h"
 #include "core.h"
 
@@ -44,6 +47,7 @@ public:
 		void SendConnectDummies(unsigned int dstIp, unsigned short dstPort, int amount, int vote=0, const char *chat=0);
 		void SendDisconnectDummies(const char *chat=0);
 		void SendChatDummies(const char *msg);
+		void SendListIpAllDummies(unsigned int dstIp, unsigned short dstPort);
 		void SendVoteDummies(unsigned int dstIp, unsigned short dstPort, int vote);
 		void SendCallvoteDummy(int id, const char *type, const char *value, const char *reason="VOTEKECK!");
 		void SendKeepAliveDummies();
@@ -73,8 +77,8 @@ public:
 
 	struct
 	{
-		SOCKET sock;
-		SOCKET sockDummies[MAX_DUMMIES_PER_CLIENT];
+		std::vector<SOCKET> sock;
+		std::vector<SOCKET> sockDummies[MAX_DUMMIES_PER_CLIENT];
 	} m_Networking;
 
 
