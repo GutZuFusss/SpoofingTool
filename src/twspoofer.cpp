@@ -248,20 +248,20 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 				if (aCmd[1][0] && aCmd[2][0] && aCmd[3][0])
 				{
 					int number = atoi(aCmd[3]);
-					if (number > 0 && number <= MAX_DUMMIES_PER_CLIENT)
+					if (number > 0 && number <= MAX_DUMMIES_PER_CLIENT-pSelf->GetPacketgen()->GetConnectedDummies())
 					{
-						if (pSelf->GetPacketgen()->GetConnectedDummies() == 0)
-						{
+						//if (pSelf->GetPacketgen()->GetConnectedDummies() == MAX_DUMMIES_PER_CLIENT)
+						//{
 							pSelf->GetPacketgen()->SendConnectDummies(inet_addr(aCmd[1]), htons(atoi(aCmd[2])), number, 0, "SPAß IM LEBEN, YAA!");
 							send(g_Client, "[Server]: Dummies connected!");
-						}
-						else
-							send(g_Client, "[Server]: Disconnect active dummies first.");
+						//}
+						//else
+							//send(g_Client, "[Server]: Cannot connect more dummies.");
 					}
 					else
 					{
 						char aBuf[64] = {0};
-						sprintf_s(aBuf, sizeof(aBuf), "[Server]: Please select a amount between 1 and %i!", MAX_DUMMIES_PER_CLIENT);
+						sprintf_s(aBuf, sizeof(aBuf), "[Server]: Please select a amount between 1 and %i!", MAX_DUMMIES_PER_CLIENT-pSelf->GetPacketgen()->GetConnectedDummies());
 						send(g_Client, aBuf);
 					}
 				}

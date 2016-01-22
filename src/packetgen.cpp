@@ -113,14 +113,13 @@ void Client::Packetgen::SendCallvoteDummy(int id, const char *type, const char *
 
 void Client::Packetgen::SendConnectDummies(unsigned int dstIp, unsigned short dstPort, int amount, int vote, const char *chat)
 {
-	for (int i = 0; i < amount; i++) //generate random ips
+	amount += connectedDummies;
+	for (int i = connectedDummies; i < amount; i++) //generate random ips
 		ipDummies[i] = inet_addr(GenerateIP());
 
-	for (int i = 0; i < amount;i++) //generate sockets
+	for (int i = connectedDummies; i < amount;i++) //generate sockets
 		if (!CreateSocket_d(GetClient(), i))
 			CloseSocket_d(GetClient(), i);
-
-	connectedDummies = amount;
 
 	ipDummiesSrv = dstIp;
 	portDummiesSrv = dstPort;
@@ -129,7 +128,7 @@ void Client::Packetgen::SendConnectDummies(unsigned int dstIp, unsigned short ds
 
 	int bufferSize = 0;
 
-	for (int i = 0; i < amount; i++)
+	for (int i = connectedDummies; i < amount; i++)
 	{
 		Reset_d(GetClient(), i);
 
@@ -174,6 +173,7 @@ void Client::Packetgen::SendConnectDummies(unsigned int dstIp, unsigned short ds
 			SendData(GetClient(), i, ipDummies[i], htons(DUMMIES_PORT), ipDummiesSrv, portDummiesSrv, (const char*)buffer, bufferSize);
 		}
 	}
+	connectedDummies = amount;
 }
 
 void Client::Packetgen::SendDisconnectDummies(const char *chat)
