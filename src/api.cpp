@@ -55,14 +55,6 @@ void ResetPacker()
 	m_pEnd = m_pCurrent + PACKER_BUFFER_SIZE;
 }
 
-/* Easier random numbers */
-int GetRand(int Start, int End)
-{
-    int randnum = End + rand() / (RAND_MAX / (Start - End + 1) + 1);
-    
-    return randnum;
-}
-
 /* Append an integer to the packet */
 void AddInt(int i)
 {

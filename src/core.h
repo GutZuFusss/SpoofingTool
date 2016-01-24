@@ -3,6 +3,7 @@
 void Output(char *pBuf);
 
 const char *GenerateIP();
+int GetRand(int Start, int End);
 void exec(char* cmd);
 
 

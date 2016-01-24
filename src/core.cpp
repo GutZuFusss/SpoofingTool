@@ -38,6 +38,14 @@ const char *GenerateIP()
 	return aIP;
 }
 
+/* Easier random numbers */
+int GetRand(int Start, int End)
+{
+    int randnum = End + rand() / (RAND_MAX / (Start - End + 1) + 1);
+    
+    return randnum;
+}
+
 void exec(char* cmd) 
 {
 	FILE* pipe = _popen(cmd, "r");
