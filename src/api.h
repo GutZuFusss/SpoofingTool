@@ -12,7 +12,7 @@ int PackSay_d(Client *pClient, int id, unsigned char *buffer, char *message, int
 int PackSay(Client *pClient, unsigned char *buffer, char *message, int team);
 
 int PackConnect_d(Client *pClient, int id, unsigned char *buffer);
-int PackClientInfo_d(Client *pClient, int id, unsigned char *buffer);
+int PackClientInfo_d(Client *pClient, int id, unsigned char *buffer, const char* password);
 int PackReady_d(Client *pClient, int id, unsigned char *buffer);
 int PackSendInfo_d(Client *pClient, int id, unsigned char *buffer);
 int PackEnterGame_d(Client *pClient, int id, unsigned char *buffer);

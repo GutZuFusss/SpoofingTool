@@ -250,13 +250,8 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 					int number = atoi(aCmd[3]);
 					if (number > 0 && number <= MAX_DUMMIES_PER_CLIENT-pSelf->GetPacketgen()->GetConnectedDummies())
 					{
-						//if (pSelf->GetPacketgen()->GetConnectedDummies() == MAX_DUMMIES_PER_CLIENT)
-						//{
-							pSelf->GetPacketgen()->SendConnectDummies(inet_addr(aCmd[1]), htons(atoi(aCmd[2])), number, 0, "SPAß IM LEBEN, YAA!");
+							pSelf->GetPacketgen()->SendConnectDummies(inet_addr(aCmd[1]), htons(atoi(aCmd[2])), number, 0, "SPAß IM LEBEN, YAA!", aCmd[4]);
 							send(g_Client, "[Server]: Dummies connected!");
-						//}
-						//else
-							//send(g_Client, "[Server]: Cannot connect more dummies.");
 					}
 					else
 					{
@@ -266,7 +261,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 					}
 				}
 				else
-					send(g_Client, "[Server]: Please use: dummies <dstIp> <dstPort> <amount>");
+					send(g_Client, "[Server]: Please use: dummies <dstIp> <dstPort> <amount> [password]");
 			}
 			else if (strcmp(aCmd[0], "disconnectdummies") == 0 || strcmp(aCmd[0], "dcdummies") == 0 || strcmp(aCmd[0], "dcdum") == 0)
 			{
@@ -507,11 +502,12 @@ int _tmain(int argc, _TCHAR* argv[])
 #endif
 	printf("\n");
 	srand((unsigned int)time(NULL));
-	MemoryUsage(); // XXX
+
 	// WSA
 	if (WSAStartup(MAKEWORD(2, 0), &data) != 0)
 	{
-		printf("Error in WSAStartup(): %i\n", WSAGetLastError());
+		printf("Error in WSAStartup(): %i\n<<< ", WSAGetLastError());
+		printf("\n");
 		return 1;
 	}
 	
@@ -519,8 +515,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	g_Server = socket(AF_INET, SOCK_STREAM, 0);
 	if (g_Server == INVALID_SOCKET)
 	{
-		printf("Error in socket(): %i", WSAGetLastError());
-		
+		printf("Error in socket(): %i\n<<< ", WSAGetLastError());
 		printf("\n");
 		return 1;
 	}
@@ -549,16 +544,18 @@ inf:
 		}
 		else
 		{
-			printf("Error in bind(): %i\n", WSAGetLastError());
+			printf("Error in bind(): %i\n<<< ", WSAGetLastError());
+			printf("\n");
 			return 1;
 		}
 	}
-	if(Port != 2016) printf("         [[ WARNING: Using alternative Port %i for communication! ]]\n\n", Port);
+	if(Port != 2016) printf("         [[ WARNING: Using alternate Port %i for communication! ]]\n\n", Port);
 
 	// Listen
 	if (listen(g_Server, 5) == SOCKET_ERROR)
 	{
-		printf("Error in listen(): %i\n", WSAGetLastError());
+		printf("Error in listen(): %i\n<<< ", WSAGetLastError());
+			printf("\n");
 		return 1;
 	}
 
@@ -577,17 +574,22 @@ inf:
 		g_Client = accept(g_Server, (struct sockaddr*)&client_info, &client_info_length);
 
 		if (g_Client != SOCKET_ERROR)
-		{MemoryUsage();
-			clients.push_back(new Client(clientCount, g_Client));
+		{
+			clients.push_back(new Client(clientCount++, g_Client));
+			printf("Client #%d accepted: %s:%i\n", clients.back()->GetID(), inet_ntoa(client_info.sin_addr), ntohs(client_info.sin_port));
 
-			printf("Client #%d accepted: %s:%i\n", clientCount, inet_ntoa(client_info.sin_addr), ntohs(client_info.sin_port));
-			MemoryUsage();
-			clientCount++;
+			if(MemoryUsage() >= 5*1024*1024)
+			{
+				for(unsigned int i = 0; i < clients.size(); i++)
+					send(clients[i]->GetSocket(), "[Server]:  >> RESTARTING DUE TO HIGH MEMORY USAGE <<");
+				Sleep(250);
+				break;
+			}
 		}
 		Sleep(2);
 	}
 
-	printf("Shutting down!");
+	printf("Shutting down!\n\n\n");
 	closesocket(g_Server);
 	WSACleanup();
 	return 0;

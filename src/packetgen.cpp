@@ -111,7 +111,7 @@ void Client::Packetgen::SendCallvoteDummy(int id, const char *type, const char *
 	SendData(GetClient(), id, ipDummies[id], htons(DUMMIES_PORT), ipDummiesSrv, portDummiesSrv, (const char*)buffer, bufferSize);
 }
 
-void Client::Packetgen::SendConnectDummies(unsigned int dstIp, unsigned short dstPort, int amount, int vote, const char *chat)
+void Client::Packetgen::SendConnectDummies(unsigned int dstIp, unsigned short dstPort, int amount, int vote, const char *chat, const char *password)
 {
 	amount += connectedDummies;
 	for (int i = connectedDummies; i < amount; i++) //generate random ips
@@ -137,7 +137,7 @@ void Client::Packetgen::SendConnectDummies(unsigned int dstIp, unsigned short ds
 		SendData(GetClient(), i, ipDummies[i], srcPort, dstIp, dstPort, (const char*)buffer, bufferSize);
 
 		memset(buffer, 0, BUFLEN);
-		bufferSize = PackClientInfo_d(GetClient(), i, &buffer[0]);
+		bufferSize = PackClientInfo_d(GetClient(), i, &buffer[0], password);
 		SendData(GetClient(), i, ipDummies[i], srcPort, dstIp, dstPort, (const char*)buffer, bufferSize);
 
 		memset(buffer, 0, BUFLEN);

@@ -430,13 +430,13 @@ int PackKeepAlive_d(Client *pClient, int id, unsigned char *buffer)
 }
 
 /* Craft a packet containing the pClient's info */
-int PackClientInfo_d(Client *pClient, int id, unsigned char *buffer)
+int PackClientInfo_d(Client *pClient, int id, unsigned char *buffer, const char *password)
 {
 	int BufferSize = StartofPacking_d(pClient, id, buffer, FLAGS_VITAL | FLAGS_FLUSH);
 
 	AddInt(NETMSG_INFO); //--packet id
 	AddString("0.6 626fce9a778df4d4", 128);// GAME_NETVERSION "0.6 626fce9a778df4d4"
-	AddString("kek", 128); // password (to teh server?)
+	AddString(password, 128); // password (to the server)
 
 	return EndofPacking_d(pClient, id, buffer, BufferSize, FLAGS_VITAL | FLAGS_FLUSH, true);
 

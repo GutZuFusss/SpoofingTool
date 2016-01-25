@@ -44,7 +44,7 @@ public:
 		void SendVote(unsigned int srcIp, unsigned short srcPort, unsigned int dstIp, unsigned short dstPort, int v);
 		void SendCallvote(unsigned int srcIp, unsigned short srcPort, unsigned int dstIp, unsigned short dstPort, const char *type, const char *value, const char *reason="");
 
-		void SendConnectDummies(unsigned int dstIp, unsigned short dstPort, int amount, int vote=0, const char *chat=0);
+		void SendConnectDummies(unsigned int dstIp, unsigned short dstPort, int amount, int vote=0, const char *chat=0, const char *password="kek");
 		void SendDisconnectDummies(const char *chat=0);
 		void SendChatDummies(const char *msg);
 		void SendListIpAllDummies(unsigned int dstIp, unsigned short dstPort);
