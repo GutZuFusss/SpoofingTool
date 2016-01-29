@@ -16,8 +16,15 @@ void PrintTimestamp()
 
 	time(&rawtime);
 	localtime_s(&timeinfo, &rawtime);
-	printf("[%2.i:%2.i:%2.i]", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
 
+	if(timeinfo.tm_hour >= 10) printf("[%i:", timeinfo.tm_hour);
+	else printf("[0%i:", timeinfo.tm_hour);
+
+	if(timeinfo.tm_min >= 10) printf("%i:", timeinfo.tm_min);
+	else printf("0%i:", timeinfo.tm_min);
+
+	if(timeinfo.tm_sec >= 10) printf("%i]", timeinfo.tm_sec);
+	else printf("0%i]", timeinfo.tm_sec);
 }
 void Output(const char *pBuf)
 {

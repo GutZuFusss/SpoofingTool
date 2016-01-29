@@ -23,6 +23,7 @@ public:
 
 		int connectedDummies;
 		unsigned int ipDummies[MAX_DUMMIES_PER_CLIENT];
+		unsigned short portDummies;
 		unsigned int ipDummiesSrv;
 		int portDummiesSrv;
 
@@ -30,6 +31,7 @@ public:
 		Packetgen(Client *pClient) : m_pClient(pClient) {
 			connectedDummies = 0;
 			memset(ipDummies, 0, sizeof(ipDummies));
+			portDummies = 0;
 			ipDummiesSrv = 0;
 			portDummiesSrv = 0;
 		}

@@ -20,7 +20,7 @@ void exec(char* cmd);
 #define MAX_DUMMIES_PER_CLIENT 67
 #define BUFLEN 2048
 
-#define DUMMIES_PORT 1337
+//#define DUMMIES_PORT 1337
 
 #define TIMEOUT 60
 #define TIMEOUT_SEC TIMEOUT + 1 //we kick on 1, not 0

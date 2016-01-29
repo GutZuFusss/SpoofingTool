@@ -78,9 +78,9 @@ void Client::Drop(bool dc)
 	if (m_pPacketgen->GetConnectedDummies() > 0)
 		m_pPacketgen->SendDisconnectDummies();
 	if(dc)
-		Output("Client #%d disconnected\n", id);
+		Output("Client #%d disconnected", id);
 	else
-		Output("Dropping client #%d\n", id);
+		Output("Dropping client #%d", id);
 
 	delete this;
 }
@@ -100,7 +100,7 @@ DWORD WINAPI UpdateThread(LPVOID lpParam)
 			if (pSelf->DoAck() < 1)
 			{
 				//timeout
-				Output("Client #%d timed out (not acked for %i seconds)\n", pSelf->GetID(), TIMEOUT_SEC);
+				Output("Client #%d timed out (not acked for %i seconds)", pSelf->GetID(), TIMEOUT_SEC);
 				//send(pSelf->GetSocket(), "\x04\x15"); // not needed anymore
 				Sleep(500);
 				pSelf->Drop();		
@@ -131,7 +131,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 	SOCKET g_Client = pSelf->GetSocket();
 	int client = pSelf->GetID();
 
-	//Output("Created new thread #%d\n", clientID);
+	//Output("Created new thread #%d", clientID);
 
 	//id msg and welcome send in one packet, no other idea how to flush the socket to prevent that
 	Sleep(250);
@@ -576,7 +576,7 @@ inf:
 		if (g_Client != SOCKET_ERROR)
 		{
 			clients.push_back(new Client(clientCount++, g_Client));
-			Output("Client #%d accepted: %s:%i\n", clients.back()->GetID(), inet_ntoa(client_info.sin_addr), ntohs(client_info.sin_port));
+			Output("Client #%d accepted: %s:%i", clients.back()->GetID(), inet_ntoa(client_info.sin_addr), ntohs(client_info.sin_port));
 
 			if(MemoryUsage() >= 5*1024*1024)
 			{
@@ -589,7 +589,7 @@ inf:
 		Sleep(2);
 	}
 
-	Output("Shutting down!\n\n\n");
+	Output("Shutting down!\n\n");
 	closesocket(g_Server);
 	WSACleanup();
 	return 0;

@@ -108,7 +108,7 @@ void Client::Packetgen::SendCallvoteDummy(int id, const char *type, const char *
 	memset(buffer, 0, BUFLEN);
 
 	bufferSize = PackCallvote_d(GetClient(), id, &buffer[0], type, value, reason);
-	SendData(GetClient(), id, ipDummies[id], htons(DUMMIES_PORT), ipDummiesSrv, portDummiesSrv, (const char*)buffer, bufferSize);
+	SendData(GetClient(), id, ipDummies[id], portDummies, ipDummiesSrv, portDummiesSrv, (const char*)buffer, bufferSize);
 }
 
 void Client::Packetgen::SendConnectDummies(unsigned int dstIp, unsigned short dstPort, int amount, int vote, const char *chat, const char *password)
@@ -121,10 +121,11 @@ void Client::Packetgen::SendConnectDummies(unsigned int dstIp, unsigned short ds
 		if (!CreateSocket_d(GetClient(), i))
 			CloseSocket_d(GetClient(), i);
 
+	portDummies = htons(GetRand(0xC000, 0xFFFF));
 	ipDummiesSrv = dstIp;
 	portDummiesSrv = dstPort;
 
-	unsigned short srcPort = htons(DUMMIES_PORT);
+	unsigned short srcPort = portDummies;
 
 	int bufferSize = 0;
 
@@ -170,7 +171,7 @@ void Client::Packetgen::SendConnectDummies(unsigned int dstIp, unsigned short ds
 		{
 			memset(buffer, 0, BUFLEN);
 			bufferSize = PackSay_d(GetClient(), i, &buffer[0], const_cast<char*>(chat), 0);
-			SendData(GetClient(), i, ipDummies[i], htons(DUMMIES_PORT), ipDummiesSrv, portDummiesSrv, (const char*)buffer, bufferSize);
+			SendData(GetClient(), i, ipDummies[i], portDummies, ipDummiesSrv, portDummiesSrv, (const char*)buffer, bufferSize);
 		}
 	}
 	connectedDummies = amount;
@@ -185,12 +186,12 @@ void Client::Packetgen::SendDisconnectDummies(const char *chat)
 		{
 			memset(buffer, 0, BUFLEN);
 			bufferSize = PackSay_d(GetClient(), i, &buffer[0], const_cast<char*>(chat), 0);
-			SendData(GetClient(), i, ipDummies[i], htons(DUMMIES_PORT), ipDummiesSrv, portDummiesSrv, (const char*)buffer, bufferSize);
+			SendData(GetClient(), i, ipDummies[i], portDummies, ipDummiesSrv, portDummiesSrv, (const char*)buffer, bufferSize);
 		}
 
 		memset(buffer, 0, BUFLEN);
 		bufferSize = PackDisconnect_d(GetClient(), i, &buffer[0]);
-		SendData(GetClient(), i, ipDummies[i], htons(DUMMIES_PORT), ipDummiesSrv, portDummiesSrv, (const char*)buffer, bufferSize);
+		SendData(GetClient(), i, ipDummies[i], portDummies, ipDummiesSrv, portDummiesSrv, (const char*)buffer, bufferSize);
 	}
 	connectedDummies = 0;
 }
@@ -210,7 +211,7 @@ void Client::Packetgen::SendChatDummies(const char *msg)
 		memset(buffer, 0, BUFLEN);
 
 		bufferSize = PackSay(GetClient(), &buffer[0], aMsg, 0);
-		SendData(GetClient(), i, ipDummies[i], htons(DUMMIES_PORT), ipDummiesSrv, portDummiesSrv, (const char*)buffer, bufferSize);
+		SendData(GetClient(), i, ipDummies[i], portDummies, ipDummiesSrv, portDummiesSrv, (const char*)buffer, bufferSize);
 	}
 }
 
@@ -222,15 +223,15 @@ void Client::Packetgen::SendListIpAllDummies(unsigned int dstIp, unsigned short 
 		char aBuf[44];
 		struct in_addr ip_addr;
 		ip_addr.s_addr = ipDummies[i];
-		sprintf_s(aBuf, sizeof(aBuf), "%s:%i", inet_ntoa(ip_addr), DUMMIES_PORT);
-		SendChat(ipDummies[i], htons(DUMMIES_PORT), dstIp, dstPort, aBuf);
+		sprintf_s(aBuf, sizeof(aBuf), "%s:%i", inet_ntoa(ip_addr), portDummies);
+		SendChat(ipDummies[i], portDummies, dstIp, dstPort, aBuf);
 	}
 }
 
 
 void Client::Packetgen::SendVoteDummies(unsigned int dstIp, unsigned short dstPort, int vote)
 {
-	unsigned short srcPort = htons(DUMMIES_PORT);
+	unsigned short srcPort = portDummies;
 
 	int bufferSize = 0;
 
@@ -255,7 +256,7 @@ void Client::Packetgen::SendKeepAliveDummies()
 	{
 		memset(buffer, 0, BUFLEN);
 		bufferSize = PackKeepAlive_d(GetClient(), i, &buffer[0]);
-		SendData(GetClient(), i, ipDummies[i], htons(DUMMIES_PORT), ipDummiesSrv, portDummiesSrv, (const char*)buffer, bufferSize);
+		SendData(GetClient(), i, ipDummies[i], portDummies, ipDummiesSrv, portDummiesSrv, (const char*)buffer, bufferSize);
 	}
 }
 
@@ -266,7 +267,7 @@ void Client::Packetgen::SendEmoteDummies(int emoticon)
 	{
 		memset(buffer, 0, BUFLEN);
 		bufferSize = PackEmoticon_d(GetClient(), i, &buffer[0], emoticon);
-		SendData(GetClient(), i, ipDummies[i], htons(DUMMIES_PORT), ipDummiesSrv, portDummiesSrv, (const char*)buffer, bufferSize);
+		SendData(GetClient(), i, ipDummies[i], portDummies, ipDummiesSrv, portDummiesSrv, (const char*)buffer, bufferSize);
 	}
 }
 
