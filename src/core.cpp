@@ -1,5 +1,7 @@
 #include "stdafx.h"
+#include <stdarg.h>
 #include <string>
+#include <ctime>
 
 
 
@@ -7,12 +9,32 @@
 
 
 /* Print messages */
-void Output(char *pBuf)
+void PrintTimestamp()
+{
+	time_t rawtime;
+	struct tm timeinfo;
+
+	time(&rawtime);
+	localtime_s(&timeinfo, &rawtime);
+	printf("[%2.i:%2.i:%2.i]", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+
+}
+void Output(const char *pBuf)
+{
+	PrintTimestamp();
+	printf(" %s\n", pBuf);
+}
+void Output(char *fmt, ...)
 {
 	/*FILE *pFile = fopen("Sniffer.txt","a+");
 	fprintf(pFile,"%s", pBuf);
 	fclose(pFile);*/
-	printf("%s", pBuf);
+	va_list vl;
+	va_start(vl, fmt);
+	PrintTimestamp(); printf(" ");
+	vprintf(fmt, vl);
+	va_end(vl);
+	printf("\n");
 }
 
 /* Generate random IP */

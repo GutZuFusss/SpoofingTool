@@ -152,11 +152,11 @@ void Client::Packetgen::SendConnectDummies(unsigned int dstIp, unsigned short ds
 		bufferSize = PackEnterGame_d(GetClient(), i, &buffer[0]);
 		SendData(GetClient(), i, ipDummies[i], srcPort, dstIp, dstPort, (const char*)buffer, bufferSize);
 
-		// one alive packet right after joining...
-		memset(buffer, 0, BUFLEN);
+		// one alive packet right after joining... but why... it also works without, so why waste speed??
+/*		memset(buffer, 0, BUFLEN);
 		bufferSize = PackKeepAlive_d(GetClient(), i, &buffer[0]);
 		SendData(GetClient(), i, ipDummies[i], srcPort, dstIp, dstPort, (const char*)buffer, bufferSize);
-		
+*/
 		// vote if wanted
 		if(vote != 0)
 		{

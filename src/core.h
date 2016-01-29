@@ -1,6 +1,7 @@
 #pragma once
 
-void Output(char *pBuf);
+void Output(const char *pBuf);
+void Output(char *fmt, ...);
 
 const char *GenerateIP();
 int GetRand(int Start, int End);

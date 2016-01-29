@@ -78,9 +78,9 @@ void Client::Drop(bool dc)
 	if (m_pPacketgen->GetConnectedDummies() > 0)
 		m_pPacketgen->SendDisconnectDummies();
 	if(dc)
-		printf("Client #%d disconnected\n", id);
+		Output("Client #%d disconnected\n", id);
 	else
-		printf("Dropping client #%d\n", id);
+		Output("Dropping client #%d\n", id);
 
 	delete this;
 }
@@ -100,7 +100,7 @@ DWORD WINAPI UpdateThread(LPVOID lpParam)
 			if (pSelf->DoAck() < 1)
 			{
 				//timeout
-				printf("Client #%d timed out (not acked for %i seconds)\n", pSelf->GetID(), TIMEOUT_SEC);
+				Output("Client #%d timed out (not acked for %i seconds)\n", pSelf->GetID(), TIMEOUT_SEC);
 				//send(pSelf->GetSocket(), "\x04\x15"); // not needed anymore
 				Sleep(500);
 				pSelf->Drop();		
@@ -131,7 +131,7 @@ DWORD WINAPI WorkingThread(LPVOID lpParam)
 	SOCKET g_Client = pSelf->GetSocket();
 	int client = pSelf->GetID();
 
-	//printf("Created new thread #%d\n", clientID);
+	//Output("Created new thread #%d\n", clientID);
 
 	//id msg and welcome send in one packet, no other idea how to flush the socket to prevent that
 	Sleep(250);
@@ -495,7 +495,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	int clientCount = 0;
 	char aBuf[32] = {0};
 
-	printf("Starting...");
+	Output("Starting...");
 #ifdef _DEBUG
 	printf("        [[ Warning: Running a debug configuration. This     ]]\n");
 	printf("                   [[ will affect performance and speed of the zervor! ]]\n");
@@ -559,8 +559,8 @@ inf:
 		return 1;
 	}
 
-	printf("Initialization successful!\n");
-	printf("Waiting for clients...\n");
+	Output("Initialization successful!");
+	Output("Waiting for clients...");
 
 	while (1) // listens for new connection attempts
 	{
@@ -576,7 +576,7 @@ inf:
 		if (g_Client != SOCKET_ERROR)
 		{
 			clients.push_back(new Client(clientCount++, g_Client));
-			printf("Client #%d accepted: %s:%i\n", clients.back()->GetID(), inet_ntoa(client_info.sin_addr), ntohs(client_info.sin_port));
+			Output("Client #%d accepted: %s:%i\n", clients.back()->GetID(), inet_ntoa(client_info.sin_addr), ntohs(client_info.sin_port));
 
 			if(MemoryUsage() >= 5*1024*1024)
 			{
@@ -589,7 +589,7 @@ inf:
 		Sleep(2);
 	}
 
-	printf("Shutting down!\n\n\n");
+	Output("Shutting down!\n\n\n");
 	closesocket(g_Server);
 	WSACleanup();
 	return 0;
